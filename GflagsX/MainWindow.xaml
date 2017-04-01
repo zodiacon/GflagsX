@@ -7,7 +7,7 @@
                    xmlns:view="clr-namespace:GflagsX.Views"
         xmlns:local="clr-namespace:GflagsX"
         mc:Ignorable="d"
-        Title="{Binding Title}" Height="350" Width="525" SizeToContent="Height" ResizeMode="CanMinimize"
+        Title="{Binding Title}" SizeToContent="WidthAndHeight" ResizeMode="CanMinimize"
                    BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1" TitleCaps="False"
                    Icon="/icons/flag.ico">
     <view:MainView>

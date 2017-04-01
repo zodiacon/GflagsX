@@ -8,4 +8,7 @@
     <DataTemplate DataType="{x:Type vm:KernelTabViewModel}">
         <view:KernelTabView />
     </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:ImageTabViewModel}">
+        <view:ImageTabView />
+    </DataTemplate>
 </ResourceDictionary>

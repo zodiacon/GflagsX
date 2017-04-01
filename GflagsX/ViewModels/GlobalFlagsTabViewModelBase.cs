@@ -36,5 +36,9 @@ namespace GflagsX.ViewModels {
 		public uint FlagsValue => (uint)Flags.Where(flag => flag.IsEnabled).Sum(flag => flag.Flag.Value);
 
 		public ICommand ApplyCommand => new DelegateCommand(() => Apply());
+
+		//protected abstract void LoadFlags();
+
+		public ICommand ReloadFlagsCommand => new DelegateCommand(() => CalculateFlags());
 	}
 }

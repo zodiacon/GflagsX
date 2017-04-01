@@ -15,16 +15,23 @@
             </DataTemplate>
         </Grid.Resources>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ItemsControl ItemsSource="{Binding Flags}" ItemTemplate="{StaticResource flagTemplate}" />
-        <StackPanel Orientation="Horizontal" Grid.Row="1">
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding Flags}" ItemTemplate="{StaticResource flagTemplate}" />
+        <StackPanel Orientation="Horizontal" Grid.Row="2">
             <TextBlock Width="140" Text="{Binding FlagsValue, StringFormat=Flags Value: 0x\{0:X\}}" VerticalAlignment="Center" />
-            <Button Margin="12,12" Command="{Binding ApplyCommand}" HorizontalAlignment="Left" Padding="10,4">
+            <Button Margin="12,12" Command="{Binding ApplyCommand}" HorizontalAlignment="Left" >
                 <StackPanel Orientation="Horizontal">
                     <Image Source="/icons/apply.ico" Width="24" Height="24" />
                     <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="Apply Flags" />
+                </StackPanel>
+            </Button>
+            <Button Command="{Binding ReloadFlagsCommand}" HorizontalAlignment="Left" Margin="12">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/icons/refresh.ico" Width="24" Height="24" />
+                    <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="Reload Flags" />
                 </StackPanel>
             </Button>
         </StackPanel>

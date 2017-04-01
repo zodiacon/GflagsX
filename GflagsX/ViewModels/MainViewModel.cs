@@ -16,6 +16,7 @@ namespace GflagsX.ViewModels {
 		public MainViewModel(IUIServices ui) {
 			AddTab(new RegistryTabViewModel());
 			AddTab(new KernelTabViewModel(), false);
+			AddTab(new ImageTabViewModel(), false);
 		}
 
 		private void AddTab(BindableBase tab, bool select = true) {

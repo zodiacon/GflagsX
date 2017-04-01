@@ -82,11 +82,15 @@
     <Compile Include="NativeMethods.cs" />
     <Compile Include="ViewModels\GlobalFlagsTabViewModelBase.cs" />
     <Compile Include="ViewModels\GlobalFlagViewModel.cs" />
+    <Compile Include="ViewModels\ImageTabViewModel.cs" />
     <Compile Include="ViewModels\KernelTabViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="ViewModels\RegistryTabViewModel.cs" />
     <Compile Include="Views\GflagsView.xaml.cs">
       <DependentUpon>GflagsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ImageTabView.xaml.cs">
+      <DependentUpon>ImageTabView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\KernelTabView.xaml.cs">
       <DependentUpon>KernelTabView.xaml</DependentUpon>
@@ -114,6 +118,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\GflagsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ImageTabView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -170,6 +178,21 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Icons\apply.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\image.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\newimage.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\refresh.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\delete.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Icons\refreshall.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
