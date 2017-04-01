@@ -1,0 +1,16 @@
+﻿<metro:MetroWindow x:Class="GflagsX.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                   xmlns:view="clr-namespace:GflagsX.Views"
+        xmlns:local="clr-namespace:GflagsX"
+        mc:Ignorable="d"
+        Title="{Binding Title}" Height="350" Width="525" SizeToContent="Height" ResizeMode="CanMinimize"
+                   BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1" TitleCaps="False"
+                   Icon="/icons/flag.ico">
+    <view:MainView>
+        
+    </view:MainView>
+</metro:MetroWindow>

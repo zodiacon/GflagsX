@@ -1,0 +1,32 @@
+﻿<UserControl x:Class="GflagsX.Views.GflagsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:GflagsX.Views"
+             mc:Ignorable="d" 
+             xmlns:z="http://zodiacon.wpf/2016"
+             d:DesignHeight="300" d:DesignWidth="300">
+    <Grid>
+        <Grid.Resources>
+            <z:BooleanToVisibilityConverter InvisibleAsHidden="True" x:Key="bool2vis" />
+            <DataTemplate x:Key="flagTemplate">
+                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled}" Margin="0,4" Visibility="{Binding IsVisible, Converter={StaticResource bool2vis}}"/>
+            </DataTemplate>
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <ItemsControl ItemsSource="{Binding Flags}" ItemTemplate="{StaticResource flagTemplate}" />
+        <StackPanel Orientation="Horizontal" Grid.Row="1">
+            <TextBlock Width="140" Text="{Binding FlagsValue, StringFormat=Flags Value: 0x\{0:X\}}" VerticalAlignment="Center" />
+            <Button Margin="12,12" Command="{Binding ApplyCommand}" HorizontalAlignment="Left" Padding="10,4">
+                <StackPanel Orientation="Horizontal">
+                    <Image Source="/icons/apply.ico" Width="24" Height="24" />
+                    <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="Apply Flags" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>
