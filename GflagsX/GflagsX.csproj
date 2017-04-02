@@ -77,6 +77,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Constants.cs" />
     <Compile Include="Models\GlobalFlag.cs" />
     <Compile Include="Models\GlobalFlags.cs" />
     <Compile Include="NativeMethods.cs" />
@@ -85,6 +86,7 @@
     <Compile Include="ViewModels\ImageTabViewModel.cs" />
     <Compile Include="ViewModels\KernelTabViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="ViewModels\NewImageViewModel.cs" />
     <Compile Include="ViewModels\RegistryTabViewModel.cs" />
     <Compile Include="Views\GflagsView.xaml.cs">
       <DependentUpon>GflagsView.xaml</DependentUpon>
@@ -97,6 +99,9 @@
     </Compile>
     <Compile Include="Views\MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\NewImageView.xaml.cs">
+      <DependentUpon>NewImageView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\RegistryTabView.xaml.cs">
       <DependentUpon>RegistryTabView.xaml</DependentUpon>
@@ -130,6 +135,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\MainView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\NewImageView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

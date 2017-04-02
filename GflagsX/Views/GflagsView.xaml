@@ -28,7 +28,7 @@
                     <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="Apply Flags" />
                 </StackPanel>
             </Button>
-            <Button Command="{Binding ReloadFlagsCommand}" HorizontalAlignment="Left" Margin="12">
+            <Button Command="{Binding ReloadFlagsCommand}" HorizontalAlignment="Left" Margin="8,12,0,12">
                 <StackPanel Orientation="Horizontal">
                     <Image Source="/icons/refresh.ico" Width="24" Height="24" />
                     <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="Reload Flags" />

@@ -13,7 +13,11 @@ namespace GflagsX.ViewModels {
 
 		public IList<BindableBase> TabItems => _tabItems;
 
+		public readonly IUIServices UI;
+
 		public MainViewModel(IUIServices ui) {
+			UI = ui;
+
 			AddTab(new RegistryTabViewModel());
 			AddTab(new KernelTabViewModel(), false);
 			AddTab(new ImageTabViewModel(), false);

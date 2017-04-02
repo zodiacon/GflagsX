@@ -1,0 +1,26 @@
+﻿<metro:MetroWindow x:Class="GflagsX.Views.NewImageView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GflagsX.Views"
+        mc:Ignorable="d"
+        Title="New Image" ResizeMode="NoResize" SizeToContent="WidthAndHeight" FocusManager.FocusedElement="{Binding ElementName=tb}" TitleCaps="False"
+                   BorderThickness="2" BorderBrush="{DynamicResource AccentColorBrush}">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="24" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal">
+            <TextBlock Text="Image Name:" VerticalAlignment="Center" />
+            <TextBox Width="200" Margin="6,0,0,0" x:Name="tb" FontWeight="Bold" Text="{Binding ImageName, UpdateSourceTrigger=PropertyChanged, Delay=200}" />
+        </StackPanel>
+        <StackPanel Grid.Row="2" HorizontalAlignment="Center" Orientation="Horizontal">
+            <Button Content="OK" Command="{Binding OKCommand}" IsDefault="True" MinWidth="60" Margin="15,0"/>
+            <Button Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="15,0" MinWidth="60" />
+        </StackPanel>
+    </Grid>
+</metro:MetroWindow>

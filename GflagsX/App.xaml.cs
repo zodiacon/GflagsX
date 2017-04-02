@@ -13,12 +13,15 @@ namespace GflagsX {
 	/// Interaction logic for App.xaml
 	/// </summary>
 	public partial class App : Application {
+		internal static MainViewModel MainViewModel { get; private set; }
+
 		protected override void OnStartup(StartupEventArgs e) {
 			base.OnStartup(e);
 
-			var vm = new MainViewModel(new UIServicesDefaults());
+			var vm = MainViewModel = new MainViewModel(new UIServicesDefaults());
 			var win = new MainWindow() { DataContext = vm };
 			win.Show();
+			vm.UI.MessageBoxService.SetOwner(win);
 		}
 	}
 }

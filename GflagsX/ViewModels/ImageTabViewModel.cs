@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using GflagsX.Models;
+using GflagsX.Views;
 using Microsoft.Win32;
+using Prism.Commands;
 
 namespace GflagsX.ViewModels {
 	class ImageTabViewModel : GlobalFlagsTabViewModelBase {
@@ -20,11 +24,7 @@ namespace GflagsX.ViewModels {
 		public IList<string> Images => _images;
 
 		public ImageTabViewModel() : base(GlobalFlagUsage.Image) {
-			using(var key = Registry.LocalMachine.OpenSubKey(IFEOKey)) {
-				_images = new ObservableCollection<string>(key.GetSubKeyNames());
-				if(_images.Count > 0)
-					SelectedImage = _images[0];
-			}
+			RefreshAll();
 		}
 
 		private string _selectedImage;
@@ -59,6 +59,47 @@ namespace GflagsX.ViewModels {
 				foreach(var vm in Flags) {
 					vm.IsEnabled = (ntGlobalFlags & vm.Flag.Value) == vm.Flag.Value;
 				}
+			}
+		}
+
+		public ICommand NewImageCommand => new DelegateCommand(() => {
+		var vm = App.MainViewModel.UI.DialogService.CreateDialog<NewImageViewModel, NewImageView>();
+		if(vm.ShowDialog() == true) {
+				if(Images.Contains(vm.ImageName, StringComparer.InvariantCultureIgnoreCase)) {
+					App.MainViewModel.UI.MessageBoxService.ShowMessage("Image name already exists.", Constants.AppName);
+				}
+				else {
+					// add to registry and the list
+					using(var key = Registry.LocalMachine.OpenSubKey(IFEOKey, true)) {
+						key.CreateSubKey(vm.ImageName);
+					}
+					var list = _images.ToList();
+					list.Add(vm.ImageName);
+					_images.Insert(list.IndexOf(vm.ImageName), vm.ImageName);
+					SelectedImage = vm.ImageName;
+				}
+			}
+		});
+
+		public ICommand DeleteImageCommand => new DelegateCommand(() => {
+			using(var key = Registry.LocalMachine.OpenSubKey(IFEOKey, true)) {
+				key.DeleteSubKey(SelectedImage);
+			}
+			int index = _images.IndexOf(SelectedImage);
+			Debug.Assert(index >= 0);
+			_images.RemoveAt(index);
+			if(_images.Count > 0)
+				SelectedImage = _images[index];
+		}, () => SelectedImage != null).ObservesProperty(() => SelectedImage);
+
+		public ICommand RefreshAllCommand => new DelegateCommand(() => RefreshAll());
+
+		private void RefreshAll() {
+			using(var key = Registry.LocalMachine.OpenSubKey(IFEOKey)) {
+				_images = new ObservableCollection<string>(key.GetSubKeyNames());
+				if(_images.Count > 0)
+					SelectedImage = _images[0];
+				OnPropertyChanged(nameof(Images));
 			}
 		}
 	}
