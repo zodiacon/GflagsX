@@ -7,6 +7,8 @@ using System.Windows.Input;
 using GflagsX.Models;
 using Prism.Commands;
 using Prism.Mvvm;
+using System.Windows.Data;
+using GflagsX.Converters;
 
 namespace GflagsX.ViewModels {
 	abstract class GlobalFlagsTabViewModelBase : BindableBase {
@@ -19,9 +21,10 @@ namespace GflagsX.ViewModels {
 		public IEnumerable<GlobalFlagViewModel> Flags => _flags;
 
 		protected GlobalFlagsTabViewModelBase(GlobalFlagUsage usage) {
-			_flags = GlobalFlags.Flags.Select(flag => new GlobalFlagViewModel(this, flag, usage)).ToList();
-			//_flags1 = _flags.Take(_flags.Count / 2).ToArray();
-			//_flags2 = _flags.Skip(_flags.Count / 2).Take(_flags.Count / 2).ToArray();
+			_flags = GlobalFlags.Flags.Where(flag => (flag.Usage & usage) == usage)
+				.Select(flag => new GlobalFlagViewModel(this, flag, usage)).ToList();
+			CollectionViewSource.GetDefaultView(Flags).GroupDescriptions.Add(
+				new PropertyGroupDescription("Category"));
 			CalculateFlags();
 		}
 
@@ -36,8 +39,6 @@ namespace GflagsX.ViewModels {
 		public uint FlagsValue => (uint)Flags.Where(flag => flag.IsEnabled).Sum(flag => flag.Flag.Value);
 
 		public ICommand ApplyCommand => new DelegateCommand(() => Apply());
-
-		//protected abstract void LoadFlags();
 
 		public ICommand ReloadFlagsCommand => new DelegateCommand(() => CalculateFlags());
 	}

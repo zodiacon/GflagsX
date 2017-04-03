@@ -4,22 +4,39 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:GflagsX.Views"
+             xmlns:conv="clr-namespace:GflagsX.Converters"
              mc:Ignorable="d" 
              xmlns:z="http://zodiacon.wpf/2016"
              d:DesignHeight="300" d:DesignWidth="300">
     <Grid>
         <Grid.Resources>
-            <z:BooleanToVisibilityConverter InvisibleAsHidden="True" x:Key="bool2vis" />
+            <z:BooleanToVisibilityConverter InvisibleAsHidden="False" x:Key="bool2vis" />
             <DataTemplate x:Key="flagTemplate">
                 <CheckBox Content="{Binding Name}" IsChecked="{Binding IsEnabled}" Margin="0,4" Visibility="{Binding IsVisible, Converter={StaticResource bool2vis}}"/>
             </DataTemplate>
+            <conv:CategoryToStringConverter x:Key="cat2string" />
         </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <ItemsControl Grid.Row="1" ItemsSource="{Binding Flags}" ItemTemplate="{StaticResource flagTemplate}" />
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding Flags}" ItemTemplate="{StaticResource flagTemplate}">
+                <ItemsControl.GroupStyle>
+                    <GroupStyle HidesIfEmpty="True">
+                        <GroupStyle.HeaderTemplate>
+                            <DataTemplate>
+                                <TextBlock FontSize="14" Margin="4" HorizontalAlignment="Left">
+                                <Bold><Underline><Run Text="{Binding Items[0].Category, Mode=OneWay,Converter={StaticResource cat2string}}" /></Underline></Bold>
+                                </TextBlock>
+                            </DataTemplate>
+                        </GroupStyle.HeaderTemplate>
+                    </GroupStyle>
+                </ItemsControl.GroupStyle>
+            </ItemsControl>
+        </ScrollViewer>
         <StackPanel Orientation="Horizontal" Grid.Row="2">
             <TextBlock Width="140" Text="{Binding FlagsValue, StringFormat=Flags Value: 0x\{0:X\}}" VerticalAlignment="Center" />
             <Button Margin="12,12" Command="{Binding ApplyCommand}" HorizontalAlignment="Left" >

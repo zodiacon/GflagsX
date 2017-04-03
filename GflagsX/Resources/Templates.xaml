@@ -3,12 +3,12 @@
                     xmlns:vm="clr-namespace:GflagsX.ViewModels"
                     xmlns:view="clr-namespace:GflagsX.Views">
     <DataTemplate DataType="{x:Type vm:RegistryTabViewModel}">
-        <view:RegistryTabView />
+        <view:RegistryTabView Margin="4"/>
     </DataTemplate>
     <DataTemplate DataType="{x:Type vm:KernelTabViewModel}">
-        <view:KernelTabView />
+        <view:KernelTabView Margin="4"/>
     </DataTemplate>
     <DataTemplate DataType="{x:Type vm:ImageTabViewModel}">
-        <view:ImageTabView />
+        <view:ImageTabView Margin="4" />
     </DataTemplate>
 </ResourceDictionary>

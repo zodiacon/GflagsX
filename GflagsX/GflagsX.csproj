@@ -78,6 +78,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Constants.cs" />
+    <Compile Include="Converters\CategoryToStringConverter.cs" />
     <Compile Include="Models\GlobalFlag.cs" />
     <Compile Include="Models\GlobalFlags.cs" />
     <Compile Include="NativeMethods.cs" />

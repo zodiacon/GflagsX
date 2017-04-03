@@ -15,7 +15,7 @@ namespace GflagsX.Models {
 
 	enum GlobalFlagCategory {
 		None,
-		KernelOnly,
+		KernelModeOnly,
 		UserModeOnly,
 		UserModeAndKernelMode
 	}

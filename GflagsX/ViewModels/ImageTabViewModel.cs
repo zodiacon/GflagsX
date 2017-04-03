@@ -35,6 +35,7 @@ namespace GflagsX.ViewModels {
 				if(SetProperty(ref _selectedImage, value)) {
 					CalculateFlags();
 					OnPropertyChanged(nameof(Flags));
+					ReloadSettings();
 				}
 			}
 		}
@@ -63,8 +64,8 @@ namespace GflagsX.ViewModels {
 		}
 
 		public ICommand NewImageCommand => new DelegateCommand(() => {
-		var vm = App.MainViewModel.UI.DialogService.CreateDialog<NewImageViewModel, NewImageView>();
-		if(vm.ShowDialog() == true) {
+			var vm = App.MainViewModel.UI.DialogService.CreateDialog<NewImageViewModel, NewImageView>();
+			if(vm.ShowDialog() == true) {
 				if(Images.Contains(vm.ImageName, StringComparer.InvariantCultureIgnoreCase)) {
 					App.MainViewModel.UI.MessageBoxService.ShowMessage("Image name already exists.", Constants.AppName);
 				}
@@ -100,6 +101,34 @@ namespace GflagsX.ViewModels {
 				if(_images.Count > 0)
 					SelectedImage = _images[0];
 				OnPropertyChanged(nameof(Images));
+			}
+		}
+
+		private string _debuggerName;
+
+		public string DebuggerName {
+			get { return _debuggerName; }
+			set { SetProperty(ref _debuggerName, value); }
+		}
+
+		public ICommand ApplySettingsCommand => new DelegateCommand(() => ApplySettings(), () => SelectedImage != null)
+			.ObservesProperty(() => SelectedImage);
+
+		private void ApplySettings() {
+			using(var key = Registry.LocalMachine.OpenSubKey(IFEOKey + "\\" + SelectedImage, true)) {
+				if(string.IsNullOrWhiteSpace(DebuggerName))
+					key.DeleteValue("Debugger");
+				else
+					key.SetValue("Debugger", DebuggerName);
+			}
+		}
+
+		public ICommand ReloadSettingsCommand => new DelegateCommand(() => ReloadSettings(), () => SelectedImage != null)
+			.ObservesProperty(() => SelectedImage);
+
+		private void ReloadSettings() {
+			using(var key = Registry.LocalMachine.OpenSubKey(IFEOKey + "\\" + SelectedImage)) {
+				DebuggerName = (key.GetValue("Debugger") as string) ?? string.Empty;
 			}
 		}
 	}

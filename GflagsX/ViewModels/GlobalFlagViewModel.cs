@@ -27,6 +27,8 @@ namespace GflagsX.ViewModels {
 			}
 		}
 
+		public string Category => Flag.Category.ToString();
+
 		public bool IsVisible { get; }
 		public string Name => Flag.Name;
 	}
