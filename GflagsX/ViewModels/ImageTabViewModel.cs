@@ -14,6 +14,7 @@ using Prism.Commands;
 namespace GflagsX.ViewModels {
 	class ImageTabViewModel : GlobalFlagsTabViewModelBase {
 		const string IFEOKey = @"Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
+		public ProcessMitigationsViewModel Mitigations { get; } = new ProcessMitigationsViewModel();
 
 		public string Text => "Image";
 
@@ -34,7 +35,7 @@ namespace GflagsX.ViewModels {
 			set {
 				if(SetProperty(ref _selectedImage, value)) {
 					CalculateFlags();
-					OnPropertyChanged(nameof(Flags));
+					RaisePropertyChanged(nameof(Flags));
 					ReloadSettings();
 				}
 			}
@@ -100,7 +101,7 @@ namespace GflagsX.ViewModels {
 				_images = new ObservableCollection<string>(key.GetSubKeyNames());
 				if(_images.Count > 0)
 					SelectedImage = _images[0];
-				OnPropertyChanged(nameof(Images));
+				RaisePropertyChanged(nameof(Images));
 			}
 		}
 
@@ -117,9 +118,14 @@ namespace GflagsX.ViewModels {
 		private void ApplySettings() {
 			using(var key = Registry.LocalMachine.OpenSubKey(IFEOKey + "\\" + SelectedImage, true)) {
 				if(string.IsNullOrWhiteSpace(DebuggerName))
-					key.DeleteValue("Debugger");
+					key.DeleteValue("Debugger", false);
 				else
 					key.SetValue("Debugger", DebuggerName);
+				var mitigations = Mitigations.Apply();
+				if (mitigations == 0)
+					key.DeleteValue("MitigationOptions", false);
+				else
+					key.SetValue("MitigationOptions", mitigations, RegistryValueKind.QWord);
 			}
 		}
 
@@ -129,6 +135,12 @@ namespace GflagsX.ViewModels {
 		private void ReloadSettings() {
 			using(var key = Registry.LocalMachine.OpenSubKey(IFEOKey + "\\" + SelectedImage)) {
 				DebuggerName = (key.GetValue("Debugger") as string) ?? string.Empty;
+
+				// read process mitigations
+
+				object value;
+				ulong mitigations = (value = key.GetValue("MitigationOptions")) == null ? 0 : Convert.ToUInt64(value);
+				Mitigations.MitigationsValue = mitigations;
 			}
 		}
 	}

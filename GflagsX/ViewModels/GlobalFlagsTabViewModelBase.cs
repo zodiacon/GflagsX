@@ -13,10 +13,10 @@ using GflagsX.Converters;
 namespace GflagsX.ViewModels {
 	abstract class GlobalFlagsTabViewModelBase : BindableBase {
 		List<GlobalFlagViewModel> _flags; 
-		GlobalFlagViewModel[] _flags1, _flags2;
+		//GlobalFlagViewModel[] _flags1, _flags2;
 
-		public GlobalFlagViewModel[] Flags1 => _flags1;
-		public GlobalFlagViewModel[] Flags2 => _flags2;
+		//public GlobalFlagViewModel[] Flags1 => _flags1;
+		//public GlobalFlagViewModel[] Flags2 => _flags2;
 
 		public IEnumerable<GlobalFlagViewModel> Flags => _flags;
 
@@ -29,7 +29,7 @@ namespace GflagsX.ViewModels {
 		}
 
 		internal void UpdateValue() {
-			OnPropertyChanged(nameof(FlagsValue));
+			RaisePropertyChanged(nameof(FlagsValue));
 		}
 
 		public abstract void Apply();

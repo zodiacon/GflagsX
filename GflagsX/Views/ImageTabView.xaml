@@ -52,8 +52,11 @@
             <StackPanel>
                 <StackPanel Orientation="Horizontal" >
                     <TextBlock Text="Debugger:" VerticalAlignment="Center" />
-                    <TextBox Text="{Binding DebuggerName}" Margin="4,0,0,0" Width="220" metro:TextBoxHelper.ClearTextButton="True" />
+                    <TextBox Text="{Binding DebuggerName}" Margin="4,0,0,0" MinWidth="250" MaxLength="100" metro:TextBoxHelper.ClearTextButton="True" />
                 </StackPanel>
+                <Expander Margin="2" Header="Mitigation Options" HorizontalAlignment="Left" IsExpanded="True">
+                    <local:ProcessMitigationsView DataContext="{Binding Mitigations}" />
+                </Expander>
                 <StackPanel Orientation="Horizontal" Margin="4,12">
                     <Button Command="{Binding ApplySettingsCommand}" Content="Apply Settings" metro:ButtonHelper.PreserveTextCase="True" />
                     <Button Margin="16,0,0,0" Content="Reload Settings" Command="{Binding ReloadSettingsCommand}" metro:ButtonHelper.PreserveTextCase="True"/>
