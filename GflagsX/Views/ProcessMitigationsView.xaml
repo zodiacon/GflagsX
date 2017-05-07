@@ -46,7 +46,7 @@
             <RowDefinition Height="4" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TextBlock Text="Mitigation Options (Hex):" />
+        <TextBlock Text="Mitigation Options (Hex):" VerticalAlignment="Center" />
         <TextBox Grid.Column="2" Text="{Binding MitigationsValueString, UpdateSourceTrigger=LostFocus, StringFormat=X}" Width="200" 
                  MaxLength="16" z:HexTextBoxBehavior.IsHexInput="True" HorizontalAlignment="Left" CharacterCasing="Upper" FontWeight="Bold" />
 
@@ -71,7 +71,7 @@
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="8" Text="High Entropy ASL:" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="8" Text="High Entropy ASLR:" VerticalAlignment="Center" />
         <ComboBox Grid.Column="2" Grid.Row="8" SelectedValuePath="Tag" SelectedValue="{Binding HighEntropyASLR, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="20"/>
             <ComboBoxItem Content="Always Off" Tag="21"/>
@@ -134,7 +134,7 @@
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="26" Text="Disable Low Indegrity Loads:" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="26" Text="Disable Low Integrity Loads:" VerticalAlignment="Center" />
         <ComboBox Grid.Column="2" Grid.Row="26" SelectedValuePath="Tag" SelectedValue="{Binding DisableLowIntegrityLoads, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="56"/>
             <ComboBoxItem Content="Always Off" Tag="57"/>
