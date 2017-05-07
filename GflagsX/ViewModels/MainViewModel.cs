@@ -36,6 +36,6 @@ namespace GflagsX.ViewModels {
 			set { SetProperty(ref _selectedTab, value); }
 		}
 
-		public string Title => "Global Flags X (C)2017 by Pavel Yosifovich";
+		public string Title => "GFlagsX (C)2017 by Pavel Yosifovich";
 	}
 }
