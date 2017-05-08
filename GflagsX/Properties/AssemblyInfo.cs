@@ -8,11 +8,11 @@ using System.Windows;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("GflagsX")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Global Flags")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("GflagsX")]
-[assembly: AssemblyCopyright("Copyright ©  2017")]
+[assembly: AssemblyCopyright("Copyright ©  2017 by Pavel Yosifovich")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
