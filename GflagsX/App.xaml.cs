@@ -9,6 +9,7 @@ using GflagsX.ViewModels;
 using Zodiacon.WPF;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace GflagsX {
 	/// <summary>
@@ -19,6 +20,7 @@ namespace GflagsX {
 
 		readonly Dictionary<string, Assembly> _assemblies = new Dictionary<string, Assembly>(4);
 
+		[MethodImpl(MethodImplOptions.NoInlining)]
 		private void LoadAssemblies() {
 			var appAssembly = typeof(App).Assembly;
 			foreach (var resourceName in appAssembly.GetManifestResourceNames()) {
