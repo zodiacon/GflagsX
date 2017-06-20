@@ -9,7 +9,7 @@
         mc:Ignorable="d"
         Title="{Binding Title}" SizeToContent="WidthAndHeight" ResizeMode="CanMinimize"
                    BorderBrush="{DynamicResource AccentColorBrush}" BorderThickness="1" TitleCaps="False"
-                   Icon="/icons/flag.ico">
+                   Icon="/icons/flag.ico" MaxHeight="{DynamicResource {x:Static SystemParameters.MaximizedPrimaryScreenHeightKey}}">
     <view:MainView>
         
     </view:MainView>

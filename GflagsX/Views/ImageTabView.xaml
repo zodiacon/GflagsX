@@ -7,61 +7,63 @@
              xmlns:local="clr-namespace:GflagsX.Views"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="16" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="20" />
-            <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-        <StackPanel Orientation="Horizontal" Grid.ColumnSpan="3">
-            <TextBlock Text="Executables:" VerticalAlignment="Center" />
-            <ComboBox ItemsSource="{Binding Images}" Width="200" Margin="4,0,0,0" SelectedItem="{Binding SelectedImage, Mode=TwoWay}">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding}" FontWeight="Bold" />
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            <Button Command="{Binding DeleteImageCommand}" Margin="6,0,0,0">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="/icons/delete.ico" Width="20" Height="20" />
-                    <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="Delete" />
-                </StackPanel>
-            </Button>
-            <Button Command="{Binding NewImageCommand}" Margin="6,0,0,0">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="/icons/newimage.ico" Width="20" Height="20" />
-                    <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="New Image..." />
-                </StackPanel>
-            </Button>
-            <Button Margin="12,0,0,0" Command="{Binding RefreshAllCommand}">
-                <StackPanel Orientation="Horizontal">
-                    <Image Source="/icons/refreshall.ico" Width="20" Height="20" />
-                    <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="Reload All" />
-                </StackPanel>
-            </Button>
-        </StackPanel>
-        <local:GflagsView Grid.Row="2" />
-        <GroupBox Header="More Settings" Grid.Row="2" Grid.Column="2" VerticalAlignment="Top">
-            <StackPanel>
-                <StackPanel Orientation="Horizontal" >
-                    <TextBlock Text="Debugger:" VerticalAlignment="Center" />
-                    <TextBox Text="{Binding DebuggerName}" Margin="4,0,0,0" MinWidth="250" MaxLength="100" metro:TextBoxHelper.ClearTextButton="True" />
-                </StackPanel>
-                <Expander Margin="2" Header="Mitigation Options" HorizontalAlignment="Left" IsExpanded="True">
-                    <local:ProcessMitigationsView DataContext="{Binding Mitigations}" />
-                </Expander>
-                <StackPanel Orientation="Horizontal" Margin="4,12">
-                    <Button Command="{Binding ApplySettingsCommand}" Content="Apply Settings" metro:ButtonHelper.PreserveTextCase="True" />
-                    <Button Margin="16,0,0,0" Content="Reload Settings" Command="{Binding ReloadSettingsCommand}" metro:ButtonHelper.PreserveTextCase="True"/>
-                </StackPanel> 
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="16" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" Grid.ColumnSpan="3">
+                <TextBlock Text="Executables:" VerticalAlignment="Center" />
+                <ComboBox ItemsSource="{Binding Images}" Width="200" Margin="4,0,0,0" SelectedItem="{Binding SelectedImage, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontWeight="Bold" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button Command="{Binding DeleteImageCommand}" Margin="6,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/icons/delete.ico" Width="20" Height="20" />
+                        <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="Delete" />
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding NewImageCommand}" Margin="6,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/icons/newimage.ico" Width="20" Height="20" />
+                        <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="New Image..." />
+                    </StackPanel>
+                </Button>
+                <Button Margin="12,0,0,0" Command="{Binding RefreshAllCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/icons/refreshall.ico" Width="20" Height="20" />
+                        <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="Reload All" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
-        </GroupBox>
-    </Grid>
+            <local:GflagsView Grid.Row="2" />
+            <GroupBox Header="More Settings" Grid.Row="2" Grid.Column="2" VerticalAlignment="Top">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" >
+                        <TextBlock Text="Debugger:" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding DebuggerName}" Margin="4,0,0,0" MinWidth="250" MaxLength="100" metro:TextBoxHelper.ClearTextButton="True" />
+                    </StackPanel>
+                    <Expander Margin="2" Header="Mitigation Options" HorizontalAlignment="Left" IsExpanded="True">
+                        <local:ProcessMitigationsView DataContext="{Binding Mitigations}" />
+                    </Expander>
+                    <StackPanel Orientation="Horizontal" Margin="4,12">
+                        <Button Command="{Binding ApplySettingsCommand}" Content="Apply Settings" metro:ButtonHelper.PreserveTextCase="True" />
+                        <Button Margin="16,0,0,0" Content="Reload Settings" Command="{Binding ReloadSettingsCommand}" metro:ButtonHelper.PreserveTextCase="True"/>
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+    </ScrollViewer>
 </UserControl>
