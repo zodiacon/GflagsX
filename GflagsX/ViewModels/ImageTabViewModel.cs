@@ -91,7 +91,7 @@ namespace GflagsX.ViewModels {
 			Debug.Assert(index >= 0);
 			_images.RemoveAt(index);
 			if(_images.Count > 0)
-				SelectedImage = _images[index];
+				SelectedImage = _images[index - 1];
 		}, () => SelectedImage != null).ObservesProperty(() => SelectedImage);
 
 		public ICommand RefreshAllCommand => new DelegateCommand(() => RefreshAll());

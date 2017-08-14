@@ -12,9 +12,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace GflagsX {
-	/// <summary>
-	/// Interaction logic for App.xaml
-	/// </summary>
 	public partial class App : Application {
 		internal static MainViewModel MainViewModel { get; private set; }
 
