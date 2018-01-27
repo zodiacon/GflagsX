@@ -16,6 +16,7 @@ namespace GflagsX.ViewModels {
 			HeapTerminationMitigation = MitigationBits(mitigations, 12, 13);
 			BottomUpASLR = MitigationBits(mitigations, 16, 17);
 			HighEntropyASLR = MitigationBits(mitigations, 20, 21);
+            DisallowStripImages = MitigationBits(mitigations, 22, 23);
 			StrictHandleChecks = MitigationBits(mitigations, 24, 25);
 			DisableExtensionPoint = MitigationBits(mitigations, 32, 33);
 			DisableDynamicCode = MitigationBits(mitigations, 36, 37);
@@ -53,22 +54,23 @@ namespace GflagsX.ViewModels {
 		}
 
 		public ulong Apply() {
-			return MitigationsValue = 
-				(ASLRMitigation == 0 ? 0 : 1UL << ASLRMitigation) | 
-				(HeapTerminationMitigation == 0 ? 0 : 1UL << HeapTerminationMitigation)	| 
-				(IsDEPEnabled ? 1UL : 0) | (IsDEPATLEnabled ? 2UL : 0) | (IsDEPSEHOPEnabled ? 4UL : 0) |
-				(HighEntropyASLR == 0 ? 0 : 1UL << HighEntropyASLR) | 
-				(BottomUpASLR == 0 ? 0 : 1UL << BottomUpASLR) | 
-				(StrictHandleChecks == 0 ? 0 : 1UL << StrictHandleChecks) |
-				(DisableWin32KCalls == 0 ? 0 : 1UL << DisableWin32KCalls) | 
-				(DisableExtensionPoint == 0 ? 0 : 1UL << DisableExtensionPoint) | 
-				(DisableDynamicCode == 0 ? 0 : 1UL << DisableDynamicCode) |
-				(ControlFlowGuard == 0 ? 0 : 1UL << ControlFlowGuard) | 
-				(BlockNonMicrosoftBinaries == 0 ? 0 : 1UL << BlockNonMicrosoftBinaries) | 
-				(BlockNonSystemFonts == 0 ? 0 : 1UL << BlockNonSystemFonts) | 
-				(DisableRemoteLoads == 0 ? 0 : 1UL << DisableRemoteLoads) | 
-				(DisableLowIntegrityLoads == 0 ? 0 : 1UL << DisableLowIntegrityLoads) | 
-				(PreferSystemImages == 0 ? 0 : 1UL << PreferSystemImages);
+            return MitigationsValue =
+                (ASLRMitigation == 0 ? 0 : 1UL << ASLRMitigation) |
+                (HeapTerminationMitigation == 0 ? 0 : 1UL << HeapTerminationMitigation) |
+                (IsDEPEnabled ? 1UL : 0) | (IsDEPATLEnabled ? 2UL : 0) | (IsDEPSEHOPEnabled ? 4UL : 0) |
+                (HighEntropyASLR == 0 ? 0 : 1UL << HighEntropyASLR) |
+                (BottomUpASLR == 0 ? 0 : 1UL << BottomUpASLR) |
+                (StrictHandleChecks == 0 ? 0 : 1UL << StrictHandleChecks) |
+                (DisableWin32KCalls == 0 ? 0 : 1UL << DisableWin32KCalls) |
+                (DisableExtensionPoint == 0 ? 0 : 1UL << DisableExtensionPoint) |
+                (DisableDynamicCode == 0 ? 0 : 1UL << DisableDynamicCode) |
+                (ControlFlowGuard == 0 ? 0 : 1UL << ControlFlowGuard) |
+                (BlockNonMicrosoftBinaries == 0 ? 0 : 1UL << BlockNonMicrosoftBinaries) |
+                (BlockNonSystemFonts == 0 ? 0 : 1UL << BlockNonSystemFonts) |
+                (DisableRemoteLoads == 0 ? 0 : 1UL << DisableRemoteLoads) |
+                (DisableLowIntegrityLoads == 0 ? 0 : 1UL << DisableLowIntegrityLoads) |
+                (PreferSystemImages == 0 ? 0 : 1UL << PreferSystemImages) |
+                (DisallowStripImages == 0 ? 0 : 1UL << DisallowStripImages);
 		}
 
 		private bool _isDEPEnabled;
@@ -93,7 +95,17 @@ namespace GflagsX.ViewModels {
 			}
 		}
 
-		private bool _isDEPSEHOPEnabled;
+        int _disallowStripImages;
+        public int DisallowStripImages {
+            get => _disallowStripImages;
+            set {
+                if (SetProperty(ref _disallowStripImages, value)) {
+                    Apply();
+                }
+            }
+        }
+
+        private bool _isDEPSEHOPEnabled;
 
 		public bool IsDEPSEHOPEnabled {
 			get => _isDEPSEHOPEnabled;
@@ -107,7 +119,8 @@ namespace GflagsX.ViewModels {
 		private int _aslrMitigation;
 
 		public int ASLRMitigation {
-			get => _aslrMitigation; set {
+			get => _aslrMitigation;
+            set {
 				if (SetProperty(ref _aslrMitigation, value)) {
 					Apply();
 				}

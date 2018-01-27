@@ -45,6 +45,8 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="4" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="4" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TextBlock Text="Mitigation Options (Hex):" VerticalAlignment="Center" />
         <TextBox Grid.Column="2" Text="{Binding MitigationsValueString, UpdateSourceTrigger=LostFocus, StringFormat=X}" Width="200" 
@@ -85,71 +87,78 @@
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="12" Text="Strict Handle Checks:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="12" SelectedValuePath="Tag" SelectedValue="{Binding StrictHandleChecks, Mode=TwoWay}">
+        <TextBlock Grid.Row="12" Text="Disallow Stripped Images" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="12" SelectedValuePath="Tag" SelectedValue="{Binding DisallowStripImages, Mode=TwoWay}">
+            <ComboBoxItem Content="Always On" Tag="22"/>
+            <ComboBoxItem Content="Always Off" Tag="23"/>
+            <ComboBoxItem Content="Defer" Tag="0"/>
+        </ComboBox>
+
+        <TextBlock Grid.Row="14" Text="Strict Handle Checks:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="14" SelectedValuePath="Tag" SelectedValue="{Binding StrictHandleChecks, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="24"/>
             <ComboBoxItem Content="Always Off" Tag="25"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="14" Text="Disable Win32K Calls:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="14" SelectedValuePath="Tag" SelectedValue="{Binding DisableWin32KCalls, Mode=TwoWay}">
+        <TextBlock Grid.Row="16" Text="Disable Win32K Calls:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="16" SelectedValuePath="Tag" SelectedValue="{Binding DisableWin32KCalls, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="28"/>
             <ComboBoxItem Content="Always Off" Tag="29"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="16" Text="Disable Extension Point:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="16" SelectedValuePath="Tag" SelectedValue="{Binding DisableExtensionPoint, Mode=TwoWay}">
+        <TextBlock Grid.Row="18" Text="Disable Extension Point:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="18" SelectedValuePath="Tag" SelectedValue="{Binding DisableExtensionPoint, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="32"/>
             <ComboBoxItem Content="Always Off" Tag="33"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="18" Text="Disable Dynamic Code:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="18" SelectedValuePath="Tag" SelectedValue="{Binding DisableDynamicCode, Mode=TwoWay}">
+        <TextBlock Grid.Row="20" Text="Disable Dynamic Code:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="20" SelectedValuePath="Tag" SelectedValue="{Binding DisableDynamicCode, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="36"/>
             <ComboBoxItem Content="Always Off" Tag="37"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="20" Text="Control Flow Guard:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="20" SelectedValuePath="Tag" SelectedValue="{Binding ControlFlowGuard, Mode=TwoWay}">
+        <TextBlock Grid.Row="22" Text="Control Flow Guard:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="22" SelectedValuePath="Tag" SelectedValue="{Binding ControlFlowGuard, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="40"/>
             <ComboBoxItem Content="Always Off" Tag="41"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="22" Text="Block Non-Microsoft Binaries:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="22" SelectedValuePath="Tag" SelectedValue="{Binding BlockNonMicrosoftBinaries, Mode=TwoWay}">
+        <TextBlock Grid.Row="24" Text="Block Non-Microsoft Binaries:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="24" SelectedValuePath="Tag" SelectedValue="{Binding BlockNonMicrosoftBinaries, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="44"/>
             <ComboBoxItem Content="Always Off" Tag="45"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="24" Text="Block Non-System Fonts:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="24" SelectedValuePath="Tag" SelectedValue="{Binding BlockNonSystemFonts, Mode=TwoWay}">
+        <TextBlock Grid.Row="26" Text="Block Non-System Fonts:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="26" SelectedValuePath="Tag" SelectedValue="{Binding BlockNonSystemFonts, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="48"/>
             <ComboBoxItem Content="Always Off" Tag="49"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="26" Text="Disable Remote Loads:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="26" SelectedValuePath="Tag" SelectedValue="{Binding DisableRemoteLoads, Mode=TwoWay}">
+        <TextBlock Grid.Row="28" Text="Disable Remote Loads:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="28" SelectedValuePath="Tag" SelectedValue="{Binding DisableRemoteLoads, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="52"/>
             <ComboBoxItem Content="Always Off" Tag="53"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="28" Text="Disable Low Integrity Loads:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="28" SelectedValuePath="Tag" SelectedValue="{Binding DisableLowIntegrityLoads, Mode=TwoWay}">
+        <TextBlock Grid.Row="30" Text="Disable Low Integrity Loads:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="30" SelectedValuePath="Tag" SelectedValue="{Binding DisableLowIntegrityLoads, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="56"/>
             <ComboBoxItem Content="Always Off" Tag="57"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="30" Text="Prefer System Images:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="30" SelectedValuePath="Tag" SelectedValue="{Binding PreferSystemImages, Mode=TwoWay}">
+        <TextBlock Grid.Row="32" Text="Prefer System Images:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="32" SelectedValuePath="Tag" SelectedValue="{Binding PreferSystemImages, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="60"/>
             <ComboBoxItem Content="Always Off" Tag="61"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
