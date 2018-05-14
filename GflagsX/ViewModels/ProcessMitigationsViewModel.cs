@@ -16,7 +16,7 @@ namespace GflagsX.ViewModels {
 			HeapTerminationMitigation = MitigationBits(mitigations, 12, 13);
 			BottomUpASLR = MitigationBits(mitigations, 16, 17);
 			HighEntropyASLR = MitigationBits(mitigations, 20, 21);
-            DisallowStripImages = MitigationBits(mitigations, 22, 23);
+            DisallowStrippedImages = MitigationBits(mitigations, 22, 23);
 			StrictHandleChecks = MitigationBits(mitigations, 24, 25);
 			DisableExtensionPoint = MitigationBits(mitigations, 32, 33);
 			DisableDynamicCode = MitigationBits(mitigations, 36, 37);
@@ -70,7 +70,7 @@ namespace GflagsX.ViewModels {
                 (DisableRemoteLoads == 0 ? 0 : 1UL << DisableRemoteLoads) |
                 (DisableLowIntegrityLoads == 0 ? 0 : 1UL << DisableLowIntegrityLoads) |
                 (PreferSystemImages == 0 ? 0 : 1UL << PreferSystemImages) |
-                (DisallowStripImages == 0 ? 0 : 1UL << DisallowStripImages);
+                (DisallowStrippedImages == 0 ? 0 : 1UL << DisallowStrippedImages);
 		}
 
 		private bool _isDEPEnabled;
@@ -95,11 +95,11 @@ namespace GflagsX.ViewModels {
 			}
 		}
 
-        int _disallowStripImages;
-        public int DisallowStripImages {
-            get => _disallowStripImages;
+        int _disallowStrippedImages;
+        public int DisallowStrippedImages {
+            get => _disallowStrippedImages;
             set {
-                if (SetProperty(ref _disallowStripImages, value)) {
+                if (SetProperty(ref _disallowStrippedImages, value)) {
                     Apply();
                 }
             }
