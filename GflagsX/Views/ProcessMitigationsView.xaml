@@ -92,17 +92,17 @@
             <ComboBoxItem Content="Always On" Tag="22"/>
             <ComboBoxItem Content="Always Off" Tag="23"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
-        </ComboBox>
+        </ComboBox>-->
 
-        <TextBlock Grid.Row="14" Text="Strict Handle Checks:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="14" SelectedValuePath="Tag" SelectedValue="{Binding StrictHandleChecks, Mode=TwoWay}">
+        <TextBlock Grid.Row="12" Text="Strict Handle Checks:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="12" SelectedValuePath="Tag" SelectedValue="{Binding StrictHandleChecks, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="24"/>
             <ComboBoxItem Content="Always Off" Tag="25"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
         </ComboBox>
 
-        <TextBlock Grid.Row="16" Text="Disable Win32K Calls:" VerticalAlignment="Center" />
-        <ComboBox Grid.Column="2" Grid.Row="16" SelectedValuePath="Tag" SelectedValue="{Binding DisableWin32KCalls, Mode=TwoWay}">
+        <TextBlock Grid.Row="14" Text="Disable Win32K Calls:" VerticalAlignment="Center" />
+        <ComboBox Grid.Column="2" Grid.Row="14" SelectedValuePath="Tag" SelectedValue="{Binding DisableWin32KCalls, Mode=TwoWay}">
             <ComboBoxItem Content="Always On" Tag="28"/>
             <ComboBoxItem Content="Always Off" Tag="29"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
