@@ -92,7 +92,7 @@
             <ComboBoxItem Content="Always On" Tag="22"/>
             <ComboBoxItem Content="Always Off" Tag="23"/>
             <ComboBoxItem Content="Defer" Tag="0"/>
-        </ComboBox>-->
+        </ComboBox>
 
         <TextBlock Grid.Row="12" Text="Strict Handle Checks:" VerticalAlignment="Center" />
         <ComboBox Grid.Column="2" Grid.Row="12" SelectedValuePath="Tag" SelectedValue="{Binding StrictHandleChecks, Mode=TwoWay}">
