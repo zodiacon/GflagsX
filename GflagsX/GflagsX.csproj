@@ -74,20 +74,20 @@
     <ApplicationIcon>Icons\flag.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MahApps.Metro, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MahApps.Metro.1.6.0-alpha001\lib\net45\MahApps.Metro.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="ControlzEx, Version=3.0.2.4, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net45\ControlzEx.dll</HintPath>
     </Reference>
-    <Reference Include="Prism, Version=6.3.0.0, Culture=neutral, PublicKeyToken=40ee6c3a2184dc59, processorArchitecture=MSIL">
-      <HintPath>..\packages\Prism.Core.6.3.0\lib\net45\Prism.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="MahApps.Metro, Version=1.6.5.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MahApps.Metro.1.6.5\lib\net45\MahApps.Metro.dll</HintPath>
+    </Reference>
+    <Reference Include="Prism, Version=7.0.0.396, Culture=neutral, PublicKeyToken=40ee6c3a2184dc59, processorArchitecture=MSIL">
+      <HintPath>..\packages\Prism.Core.7.0.0.396\lib\net45\Prism.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\MahApps.Metro.1.6.0-alpha001\lib\net45\System.Windows.Interactivity.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net45\System.Windows.Interactivity.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -101,9 +101,8 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="Zodiacon.WPF, Version=1.1.6323.29814, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Zodiacon.WPF.1.2.3\lib\net45\Zodiacon.WPF.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="Zodiacon.WPF, Version=1.1.6599.28064, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Zodiacon.WPF.1.2.17\lib\net45\Zodiacon.WPF.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
