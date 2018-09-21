@@ -123,6 +123,7 @@
     <Compile Include="ViewModels\NewImageViewModel.cs" />
     <Compile Include="ViewModels\ProcessMitigationsViewModel.cs" />
     <Compile Include="ViewModels\RegistryTabViewModel.cs" />
+    <Compile Include="ViewModels\SilentProcessExitViewModel.cs" />
     <Compile Include="Views\GflagsView.xaml.cs">
       <DependentUpon>GflagsView.xaml</DependentUpon>
     </Compile>
@@ -143,6 +144,9 @@
     </Compile>
     <Compile Include="Views\RegistryTabView.xaml.cs">
       <DependentUpon>RegistryTabView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\SilentProcessExitView.xaml.cs">
+      <DependentUpon>SilentProcessExitView.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -185,6 +189,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\RegistryTabView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\SilentProcessExitView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -258,12 +266,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Assemblies\Prism.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Assemblies\MahApps.Metro.dll" />
-    <EmbeddedResource Include="Assemblies\System.Windows.Interactivity.dll" />
-    <EmbeddedResource Include="Assemblies\Zodiacon.WPF.dll" />
+    <Resource Include="Icons\configure.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -22,21 +22,33 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-
-            <ItemsControl Grid.Row="1" ItemsSource="{Binding Flags}" ItemTemplate="{StaticResource flagTemplate}">
-                <ItemsControl.GroupStyle>
-                    <GroupStyle HidesIfEmpty="True">
-                        <GroupStyle.HeaderTemplate>
-                            <DataTemplate>
-                                <TextBlock FontSize="14" Margin="4" HorizontalAlignment="Left">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <ItemsControl Grid.Row="0" ItemsSource="{Binding Flags}" ItemTemplate="{StaticResource flagTemplate}">
+                    <ItemsControl.GroupStyle>
+                        <GroupStyle HidesIfEmpty="True">
+                            <GroupStyle.HeaderTemplate>
+                                <DataTemplate>
+                                    <TextBlock FontSize="14" Margin="4" HorizontalAlignment="Left">
                                 <Bold><Underline><Run Text="{Binding Items[0].Category, Mode=OneWay,Converter={StaticResource cat2string}}" /></Underline></Bold>
-                                </TextBlock>
-                            </DataTemplate>
-                        </GroupStyle.HeaderTemplate>
-                    </GroupStyle>
-                </ItemsControl.GroupStyle>
-            </ItemsControl>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </GroupStyle.HeaderTemplate>
+                        </GroupStyle>
+                    </ItemsControl.GroupStyle>
+                </ItemsControl>
+                <Button Grid.Row="3" Command="{Binding ConfigSilentProcessExitCommand}" Margin="2,6" HorizontalAlignment="Left" FontSize="12" Padding="4,0" Visibility="{Binding SilentProcessExitVisible}">
+                    <StackPanel Orientation="Horizontal">
+                        <Image Source="/icons/configure.ico" Width="20" Height="20" />
+                        <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="Configure Silent Process Exit" />
+                    </StackPanel>
+                </Button>
+            </Grid>
         </ScrollViewer>
+
         <StackPanel Orientation="Horizontal" Grid.Row="2">
             <TextBlock Width="140" Text="{Binding FlagsValue, StringFormat=Flags Value: 0x\{0:X\}}" VerticalAlignment="Center" />
             <Button Margin="12,12" Command="{Binding ApplyCommand}" HorizontalAlignment="Left" >

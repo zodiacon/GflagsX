@@ -33,7 +33,8 @@ namespace GflagsX.Models {
 			new GlobalFlag("Early Critical Section Event Creation", 0x10000000, GlobalFlagUsage.All) { Category = GlobalFlagCategory.UserModeOnly },
 			new GlobalFlag("Stop on Unhandled User Mode Exception", 0x20000000, GlobalFlagUsage.All) { Category = GlobalFlagCategory.UserModeOnly },
 			new GlobalFlag("Enable Bad Handles Detection", 0x40000000, GlobalFlagUsage.Kernel | GlobalFlagUsage.Registry) { Category = GlobalFlagCategory.UserModeAndKernelMode },
-			new GlobalFlag("Disable Protected DLL Verification", 0x80000000, GlobalFlagUsage.All) { Category = GlobalFlagCategory.UserModeOnly }
+			new GlobalFlag("Disable Protected DLL Verification", 0x80000000, GlobalFlagUsage.All) { Category = GlobalFlagCategory.UserModeOnly },
+			new GlobalFlag("Silent Process Exit", 0x200, GlobalFlagUsage.Image) { Category = GlobalFlagCategory.UserModeOnly }
 		};
 
 		public static IReadOnlyList<GlobalFlag> Flags => _flags;

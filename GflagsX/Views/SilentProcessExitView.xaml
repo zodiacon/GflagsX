@@ -1,0 +1,86 @@
+﻿<metro:MetroWindow x:Class="GflagsX.Views.SilentProcessExitView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:metro="http://metro.mahapps.com/winfx/xaml/controls"
+         xmlns:local="clr-namespace:GflagsX.Views"
+        mc:Ignorable="d"
+        Height="450" Width="800"
+        Title="Silent Process Exit Configuration" ResizeMode="NoResize" SizeToContent="WidthAndHeight" TitleCaps="False"
+                   BorderThickness="2" BorderBrush="{DynamicResource AccentColorBrush}">
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="16" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock FontSize="14">
+            <Span>Image Name: </Span>
+            <Run Text="{Binding ImageName, Mode=OneWay}" FontWeight="Bold" />
+        </TextBlock>
+        <GroupBox Header="General" Grid.Row="2" >
+            <StackPanel>
+                <CheckBox Content="Ignore Self Exits" IsChecked="{Binding IgnoreSelfExits}" Margin="2" />
+                <CheckBox Content="Launch Monitor Process" IsChecked="{Binding LaunchMonitorProcess}" Margin="2" />
+                <Grid Margin="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="4" />
+                        <ColumnDefinition  />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="4" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Monitor Process:" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="2" Text="{Binding MonitorProcess}" Width="180" IsEnabled="{Binding LaunchMonitorProcess}"/>
+
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+        <GroupBox Header="Dump Collection" Grid.Row="4">
+            <StackPanel>
+                <CheckBox Content="Enable" IsChecked="{Binding IsDumpEnabled}" Margin="2"/>
+                <Grid Margin="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="4" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="4" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="4" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Dump Folder:" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="2" Text="{Binding DumpFolder}" IsEnabled="{Binding IsDumpEnabled}" />
+
+                    <TextBlock Grid.Row="2" Text="Dump Type:" VerticalAlignment="Center" />
+                    <ComboBox Grid.Row="2" Grid.Column="2" ItemsSource="{Binding DumpTypes}" SelectedItem="{Binding SelectedDumpType}" IsEnabled="{Binding IsDumpEnabled}" />
+
+                    <TextBlock Grid.Row="4" Text="Module Ignore List:" />
+                    <TextBox Grid.Column="2" Grid.Row="4" AcceptsReturn="True" Height="70" IsEnabled="{Binding IsDumpEnabled}" Text="{Binding IgnoreLoadedModules}" />
+
+                </Grid>
+            </StackPanel>
+        </GroupBox>
+
+        <StackPanel Grid.Row="6" HorizontalAlignment="Center" Orientation="Horizontal">
+            <Button Content="OK" Command="{Binding OKCommand}" IsDefault="True" MinWidth="60" Margin="15,0"/>
+            <Button Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True" Margin="15,0" MinWidth="60" />
+        </StackPanel>
+
+    </Grid>
+</metro:MetroWindow>

@@ -9,6 +9,7 @@ using Prism.Commands;
 using Prism.Mvvm;
 using System.Windows.Data;
 using GflagsX.Converters;
+using System.Windows;
 
 namespace GflagsX.ViewModels {
 	abstract class GlobalFlagsTabViewModelBase : BindableBase {
@@ -31,6 +32,8 @@ namespace GflagsX.ViewModels {
 		internal void UpdateValue() {
 			RaisePropertyChanged(nameof(FlagsValue));
 		}
+
+		public virtual Visibility SilentProcessExitVisible => Visibility.Collapsed;
 
 		public abstract void Apply();
 

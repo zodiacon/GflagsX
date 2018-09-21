@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using GflagsX.Models;
 using GflagsX.Views;
@@ -13,7 +14,7 @@ using Prism.Commands;
 
 namespace GflagsX.ViewModels {
 	class ImageTabViewModel : GlobalFlagsTabViewModelBase {
-		const string IFEOKey = @"Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
+		public const string IFEOKey = @"Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
 		public ProcessMitigationsViewModel Mitigations { get; } = new ProcessMitigationsViewModel();
 
 		public string Text => "Image";
@@ -48,6 +49,12 @@ namespace GflagsX.ViewModels {
 			using(var key = Registry.LocalMachine.OpenSubKey(IFEOKey + "\\" + SelectedImage, true)) {
 				var value = FlagsValue;
 				key.SetValue("GlobalFlag", value, RegistryValueKind.DWord);
+
+				if (!Flags.Where(f => f.IsEnabled).Any(f => f.Flag.Value == 0x200)) {
+					// no silent process exit, remove key
+					Registry.LocalMachine.DeleteSubKey(SilentProcessExitViewModel.SilentProcessExitKey + "\\" + SelectedImage, false);
+				}
+
 			}
 		}
 
@@ -63,6 +70,8 @@ namespace GflagsX.ViewModels {
 				}
 			}
 		}
+
+		public override Visibility SilentProcessExitVisible => Visibility.Visible;
 
 		public ICommand NewImageCommand => new DelegateCommand(() => {
 			var vm = App.MainViewModel.UI.DialogService.CreateDialog<NewImageViewModel, NewImageView>();
@@ -143,5 +152,13 @@ namespace GflagsX.ViewModels {
 				Mitigations.MitigationsValue = mitigations;
 			}
 		}
+
+		public DelegateCommandBase ConfigSilentProcessExitCommand => new DelegateCommand(() => {
+			var vm = App.MainViewModel.UI.DialogService.CreateDialog<SilentProcessExitViewModel, SilentProcessExitView>(SelectedImage);
+			if (vm.ShowDialog() == true) {
+				vm.SaveSettings();
+				Flags.First(f => f.Flag.Value == 0x200).IsEnabled = true;
+			}
+		});
 	}
 }

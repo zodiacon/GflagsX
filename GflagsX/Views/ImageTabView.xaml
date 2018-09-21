@@ -11,7 +11,7 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="16" />
+                <RowDefinition Height="8" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
@@ -20,7 +20,7 @@
                 <ColumnDefinition Width="20" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel Orientation="Horizontal" Grid.ColumnSpan="3">
+            <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.ColumnSpan="3">
                 <TextBlock Text="Executables:" VerticalAlignment="Center" />
                 <ComboBox ItemsSource="{Binding Images}" Width="200" Margin="4,0,0,0" SelectedItem="{Binding SelectedImage, Mode=TwoWay}">
                     <ComboBox.ItemTemplate>
@@ -49,6 +49,7 @@
                 </Button>
             </StackPanel>
             <local:GflagsView Grid.Row="2" />
+
             <GroupBox Header="More Settings" Grid.Row="2" Grid.Column="2" VerticalAlignment="Top">
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" >
