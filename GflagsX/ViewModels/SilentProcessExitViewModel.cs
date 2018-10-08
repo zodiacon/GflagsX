@@ -127,7 +127,10 @@ namespace GflagsX.ViewModels {
 		}
 
 		public void SaveSettings() {
-			using (var key = Registry.LocalMachine.OpenSubKey(SilentProcessExitKey + "\\" + ImageName, true)) {
+			var key = Registry.LocalMachine.OpenSubKey(SilentProcessExitKey + "\\" + ImageName, true);
+			if(key == null)
+				key = Registry.LocalMachine.CreateSubKey(SilentProcessExitKey + "\\" + ImageName);
+			using (key) {
 				if (IgnoreSelfExits)
 					key.SetValue(nameof(IgnoreSelfExits), 1);
 				else
