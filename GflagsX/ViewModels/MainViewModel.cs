@@ -36,6 +36,6 @@ namespace GflagsX.ViewModels {
 			set { SetProperty(ref _selectedTab, value); }
 		}
 
-		public string Title => "GFlagsX v0.8 (C)2017-2018 by Pavel Yosifovich";
+		public string Title => "GFlagsX v0.82 (C)2017-2019 by Pavel Yosifovich";
 	}
 }
