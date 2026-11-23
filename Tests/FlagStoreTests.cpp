@@ -82,14 +82,14 @@ TEST(ImageSettingsRoundTrip) {
 	ImageSettings s;
 	s.GlobalFlag = 0x2000000;
 	s.Debugger = L"\"C:\\Debuggers\\windbg.exe\" -g";
-	s.Mitigations.Policy = 0x100000101;
+	s.Mitigations.Word[0] = 0x100000101;
 	CHECK_EQ(WriteImage(keys.Where, L"app.exe", s), (DWORD)ERROR_SUCCESS);
 	auto read = ReadImage(keys.Where, L"app.exe");
 	CHECK(read.has_value());
 	CHECK_EQ(read->GlobalFlag, 0x2000000u);
 	CHECK_EQ(read->GlobalFlagType, (DWORD)REG_DWORD);
 	CHECK_EQ(read->Debugger, s.Debugger);
-	CHECK(read->Mitigations == Mitigations::Options{ 0x100000101 });
+	CHECK(read->Mitigations == Mitigations::Options{ { 0x100000101 } });
 	CHECK_EQ(read->MitigationsType, (DWORD)REG_QWORD);
 
 	// nothing set: the values go
@@ -117,75 +117,97 @@ TEST(ImageGlobalFlagAsString) {
 	CHECK(again.has_value() && again->GlobalFlag == 0x2000100u);
 }
 
+TEST(ImageMitigationsAsSetProcessMitigationWritesThem) {
+	TestKeys keys;
+	CreateImage(keys.Where, L"app.exe");
+	auto image = keys.Image(L"app.exe");
+	// Set-ProcessMitigation -Enable UserShadowStack's value: 24 bytes, CET shadow stacks (option 31) at bit 124
+	BYTE data[24]{};
+	data[15] = 0x10;
+	keys.SetValue(image, L"MitigationOptions", REG_BINARY, data, sizeof(data));
+	auto read = ReadImage(keys.Where, L"app.exe");
+	CHECK(read.has_value());
+	if (!read)
+		return;
+	CHECK_EQ(read->MitigationsType, (DWORD)REG_BINARY);
+	CHECK(read->MitigationsMore.empty());
+	auto fields = Mitigations::Fields();
+	auto field = [&](PCWSTR name) -> Mitigations::Field const& {
+		return *std::ranges::find_if(fields, [&](auto& f) { return std::wstring_view(f.Name) == name; });
+	};
+	CHECK(Mitigations::GetState(read->Mitigations, field(L"CET Shadow Stacks")) == Mitigations::State::AlwaysOn);
+
+	// and FSCTL system calls (option 39: bit 156, in the third word) as Set-ProcessMitigation has it
+	read->Mitigations = Mitigations::SetState(read->Mitigations, field(L"Disable FSCTL System Calls"), Mitigations::State::AlwaysOn);
+	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
+	BYTE written[32]{};
+	DWORD size = sizeof(written), type = 0;
+	CHECK_EQ(::RegGetValue(HKEY_CURRENT_USER, image.c_str(), L"MitigationOptions", RRF_RT_ANY, &type, written, &size), (LONG)ERROR_SUCCESS);
+	CHECK_EQ(type, (DWORD)REG_BINARY);
+	CHECK_EQ(size, (DWORD)24);
+	CHECK(written[15] == 0x10 && written[19] == 0x10);
+}
+
 TEST(ImageBinaryMitigationsKeepTheirMoreBytes) {
 	TestKeys keys;
 	CreateImage(keys.Where, L"app.exe");
-	// 16 bytes, as Set-ProcessMitigation writes them: the second 8 are newer mitigations
-	BYTE data[16]{ 0x00, 0x01, 0, 0, 0, 0, 0, 0, 0x10, 0, 0, 0, 0, 0, 0, 0x20 };
-	keys.SetValue(keys.Image(L"app.exe"), L"MitigationOptions", REG_BINARY, data, sizeof(data));
-	auto read = ReadImage(keys.Where, L"app.exe");
-	CHECK(read.has_value());
-	CHECK_EQ(read->Mitigations.Policy, 0x100ull);
-	CHECK_EQ(read->Mitigations.Policy2, 0x2000000000000010ull);
-	CHECK_EQ(read->MitigationsType, (DWORD)REG_BINARY);
-	CHECK(read->MitigationsMore.empty());
-
-	read->Mitigations.Policy = 0x200;
-	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
-	BYTE written[32]{};
-	DWORD size = sizeof(written), type = 0;
-	CHECK_EQ(::RegGetValue(HKEY_CURRENT_USER, keys.Image(L"app.exe").c_str(), L"MitigationOptions", RRF_RT_ANY, &type, written, &size), (LONG)ERROR_SUCCESS);
-	CHECK_EQ(type, (DWORD)REG_BINARY);
-	CHECK_EQ(size, (DWORD)16);
-	CHECK(written[1] == 0x02 && written[8] == 0x10 && written[15] == 0x20);
-
-	// Policy all 0, Policy2 not: the value stays
-	read->Mitigations.Policy = 0;
-	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
-	CHECK_EQ(keys.ValueType(keys.Image(L"app.exe"), L"MitigationOptions"), (DWORD)REG_BINARY);
-}
-
-TEST(ImageMitigationsBeyondPolicy2AreKept) {
-	TestKeys keys;
-	CreateImage(keys.Where, L"app.exe");
-	// 24 bytes: Policy, Policy2 and 8 bytes of mitigations newer than this
-	BYTE data[24]{ 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10, 0, 0, 0, 0, 0x55, 0, 0, 0, 0, 0, 0, 0x66 };
-	keys.SetValue(keys.Image(L"app.exe"), L"MitigationOptions", REG_BINARY, data, sizeof(data));
+	auto image = keys.Image(L"app.exe");
+	// 32 bytes: the 24 shown and 8 of mitigations newer than those
+	BYTE data[32]{ 0x00, 0x01 };
+	data[24] = 0x55;
+	data[31] = 0x66;
+	keys.SetValue(image, L"MitigationOptions", REG_BINARY, data, sizeof(data));
 	auto read = ReadImage(keys.Where, L"app.exe");
 	CHECK(read.has_value());
 	if (!read)
 		return;
-	CHECK(read->Mitigations == (Mitigations::Options{ 0x1, 0x10000000 }));
+	CHECK(read->Mitigations == Mitigations::Options{ { 0x100 } });
 	CHECK_EQ(read->MitigationsMore.size(), (size_t)8);
 
+	read->Mitigations.Word[0] = 0x200;
+	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
+	BYTE written[40]{};
+	DWORD size = sizeof(written), type = 0;
+	CHECK_EQ(::RegGetValue(HKEY_CURRENT_USER, image.c_str(), L"MitigationOptions", RRF_RT_ANY, &type, written, &size), (LONG)ERROR_SUCCESS);
+	CHECK_EQ(size, (DWORD)32);
+	CHECK(written[1] == 0x02 && written[24] == 0x55 && written[31] == 0x66);
+
+	// the shown words all 0, the more bytes not: the value stays
 	read->Mitigations = {};
 	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
-	BYTE written[32]{};
-	DWORD size = sizeof(written), type = 0;
-	CHECK_EQ(::RegGetValue(HKEY_CURRENT_USER, keys.Image(L"app.exe").c_str(), L"MitigationOptions", RRF_RT_ANY, &type, written, &size), (LONG)ERROR_SUCCESS);
-	CHECK_EQ(size, (DWORD)24);
-	CHECK(written[0] == 0 && written[11] == 0 && written[16] == 0x55 && written[23] == 0x66);
+	CHECK_EQ(keys.ValueType(image, L"MitigationOptions"), (DWORD)REG_BINARY);
 }
 
-TEST(ImageQwordMitigationsBecomeBinaryForPolicy2) {
+TEST(ImageQwordMitigationsBecomeBinary) {
 	TestKeys keys;
 	CreateImage(keys.Where, L"app.exe");
+	auto image = keys.Image(L"app.exe");
 	ImageSettings s;
-	s.Mitigations.Policy = 0x100;
+	s.Mitigations.Word[0] = 0x100;
 	CHECK_EQ(WriteImage(keys.Where, L"app.exe", s), (DWORD)ERROR_SUCCESS);
-	CHECK_EQ(keys.ValueType(keys.Image(L"app.exe"), L"MitigationOptions"), (DWORD)REG_QWORD);
+	CHECK_EQ(keys.ValueType(image, L"MitigationOptions"), (DWORD)REG_QWORD);
 
-	// a REG_QWORD has no room for Policy2
+	// a REG_QWORD has the first word only
 	auto read = ReadImage(keys.Where, L"app.exe");
 	CHECK(read.has_value());
 	if (!read)
 		return;
-	CHECK(read->Mitigations == Mitigations::Options{ 0x100 });
-	read->Mitigations.Policy2 = 1ull << 28;	// CET shadow stacks: always on
+	CHECK(read->Mitigations == Mitigations::Options{ { 0x100 } });
+	read->Mitigations.Word[1] = 1ull << 60;	// CET shadow stacks: always on
 	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
-	CHECK_EQ(keys.ValueType(keys.Image(L"app.exe"), L"MitigationOptions"), (DWORD)REG_BINARY);
+	CHECK_EQ(keys.ValueType(image, L"MitigationOptions"), (DWORD)REG_BINARY);
 	auto again = ReadImage(keys.Where, L"app.exe");
-	CHECK(again.has_value() && again->Mitigations == (Mitigations::Options{ 0x100, 1ull << 28 }));
+	CHECK(again.has_value() && again->Mitigations == (Mitigations::Options{ { 0x100, 1ull << 60 } }));
+
+	// 16 bytes (as GflagsX wrote it once): read, and written back as 24
+	BYTE sixteen[16]{ 0x01 };
+	keys.SetValue(image, L"MitigationOptions", REG_BINARY, sixteen, sizeof(sixteen));
+	again = ReadImage(keys.Where, L"app.exe");
+	CHECK(again.has_value() && again->Mitigations == Mitigations::Options{ { 0x1 } });
+	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *again), (DWORD)ERROR_SUCCESS);
+	DWORD size = 0;
+	CHECK_EQ(::RegGetValue(HKEY_CURRENT_USER, image.c_str(), L"MitigationOptions", RRF_RT_ANY, nullptr, nullptr, &size), (LONG)ERROR_SUCCESS);
+	CHECK_EQ(size, (DWORD)24);
 }
 
 TEST(ImagePageHeapAndVerifier) {

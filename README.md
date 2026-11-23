@@ -13,7 +13,8 @@ A native Windows app (C++, WTL), with dark mode and per-monitor DPI support. It 
 - **Image**: the executables with Image File Execution Options, and for the selected one:
   - its global flags (Page Heap, Application Verifier, Show Loader Snaps...),
   - its debugger,
-  - its mitigation options (DEP, ASLR, CFG, dynamic code, image loads, CET shadow stacks, XFG...), as the hex value and a choice per mitigation,
+  - its mitigation options (DEP, SEHOP, ASLR, CFG, dynamic code, image loads, export/import address filters, child
+    processes, CET shadow stacks, FSCTL...), as Set-ProcessMitigation writes them, as the hex value and a choice per mitigation,
   - page heap: full or normal, its options (backward overruns, unaligned, decommit, protect...), sizes, random, DLLs,
     fault injection,
   - Application Verifier: the providers to load and the flags,

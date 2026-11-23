@@ -54,18 +54,21 @@ Include paths are `..\wtlhelper\WTLHelper` and `..\wtlhelper\WTL` (WTLHelper hea
     check box of the target shows as they were read; the views' status names the set ones). The table is GFlags' (all
     32 bits), with gflags.exe's abbreviations (`FindByAbbreviation`; Silent Process Exit has none). A flag is added or
     retargeted here only.
-  - `Mitigations.h/.cpp`: MitigationOptions' first 128 bits as `Options` (`Policy`: winbase.h's
-    `PROCESS_CREATION_MITIGATION_POLICY_*`, `Policy2`: `..._POLICY2_*`): DEP, ATL thunk emulation and SEHOP as
-    `Policy` bits (`Bits()`), every other mitigation a 2-bit field at a multiple of 4 (`Fields()`, `Shift` 64 and up
-    for `Policy2`'s: 0 default, 1 always on, 2 always off, 3 the field's `OtherName` or reserved); `GetState`/`SetState`
-    keep the other bits; hex `Format`/`Parse` as one 128-bit number (16 digits while `Policy2` is 0).
+  - `Mitigations.h/.cpp`: MitigationOptions' first 24 bytes as `Options` (`Word[3]`): the kernel's map, a 4-bit field
+    per mitigation at its `PS_MITIGATION_OPTION` number × 4 (0 default, 1 always on, 2 always off, 3 the field's
+    `OtherName` or reserved). Past the first word this is *not* winbase.h's `PROCESS_CREATION_MITIGATION_POLICY2_*`
+    layout, and SEHOP is option 1 (bit 4), not `0x4`. DEP and ATL thunk emulation are option 0's bits (`Bits()`), the
+    rest `Fields()` (`Option`; `Inferred` for 32-36 and 38, whose numbers weren't seen written: the form marks them).
+    The numbers were checked against what Set-ProcessMitigation writes; check a new one the same way (enable it on a
+    throwaway image, read the bits) before adding it. `GetState`/`SetState` keep the other bits; hex `Format`/`Parse`
+    as one number (16, 32 or 48 digits).
   - `FlagStore.h/.cpp`: reading and writing, with Win32 errors (`std::expected<T, DWORD>` or `DWORD`). The registry
     functions take `Locations` (`System()`: HKLM; `Under()`: the tests'), and open keys with `KEY_WOW64_64KEY`.
     The kernel's flags are `NtQuerySystemInformation`/`NtSetSystemInformation(SystemFlagsInformation)` (not
     `RtlGetNtGlobalFlags`, which is the process's own). An image's `GlobalFlag` may be a `REG_SZ` ("0x02000000", as
-    GFlags writes it) and is written back with its type; `MitigationOptions` may be a `REG_QWORD` (`Policy` only) or a
-    `REG_BINARY` of 16 or more bytes (Set-ProcessMitigation), whose bytes past the first 16 are kept
-    (`MitigationsMore`); a non-zero `Policy2` makes it `REG_BINARY`. Zero or empty values are removed rather than
+    GFlags writes it) and is written back with its type; `MitigationOptions` may be a `REG_QWORD` (the first word) or
+    a `REG_BINARY` (24 bytes from Set-ProcessMitigation), whose bytes past the first 24 are kept (`MitigationsMore`);
+    it's written as a 24-byte `REG_BINARY` when it was a binary or the higher words aren't 0. Zero or empty values are removed rather than
     written. Silent Process Exit: `ReportingMode` bits; `DumpType` is `MINIDUMP_TYPE` flags, with GFlags' presets
     (`MicroDump` 0x88 as documented; `MiniDump` 0x121 and `HeapDump` 0x10B25 are gflagsui.dll's constants) and any
     other value its Custom; `MaxNumberOfDumpFiles` (0: no value). Page heap (`PageHeapSettings`) and Application

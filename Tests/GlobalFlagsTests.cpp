@@ -53,80 +53,142 @@ TEST(FormatValue) {
 	CHECK_EQ(FormatValue(0), std::wstring(L"0x00000000"));
 }
 
-TEST(MitigationFieldStates) {
-	using namespace Mitigations;
-	auto fields = Fields();
-	auto& aslr = fields[0];
-	CHECK_EQ(aslr.Shift, 8);
-	Options options{ 0x101 };	// DEP, Force ASLR always on
-	CHECK(GetState(options, aslr) == State::AlwaysOn);
-	options = SetState(options, aslr, State::AlwaysOff);
-	CHECK_EQ(options.Policy, 0x201ull);
-	// the other bits stay
-	options.Policy |= 1ull << 63;
-	options = SetState(options, fields[2], State::AlwaysOn);
-	CHECK_EQ(options.Policy, 0x8000000000010201ull);
-	CHECK(GetState(options, aslr) == State::AlwaysOff);
-	options = SetState(options, aslr, State::Default);
-	CHECK_EQ(options.Policy, 0x8000000000010001ull);
-	CHECK_EQ(options.Policy2, 0ull);
+namespace {
+	Mitigations::Field const* FindField(PCWSTR name) {
+		auto fields = Mitigations::Fields();
+		auto it = std::ranges::find_if(fields, [&](auto& f) { return std::wstring_view(f.Name) == name; });
+		return it == fields.end() ? nullptr : &*it;
+	}
+
+	bool IsSet(Mitigations::Options const& options, int bit) {
+		return (options.Word[bit / 64] >> (bit % 64)) & 1;
+	}
 }
 
-TEST(MitigationPolicy2Fields) {
+TEST(MitigationFieldStates) {
 	using namespace Mitigations;
-	auto fields = Fields();
-	auto shadow = std::ranges::find_if(fields, [](auto& f) { return std::wstring_view(f.Name) == L"CET Shadow Stacks"; });
-	CHECK(shadow != fields.end());
-	if (shadow == fields.end())
+	auto aslr = FindField(L"Force ASLR (Relocate Images)");
+	CHECK(aslr != nullptr);
+	if (!aslr)
 		return;
-	CHECK_EQ(shadow->Shift, 64 + 28);	// PROCESS_CREATION_MITIGATION_POLICY2_CET_USER_SHADOW_STACKS_MASK
-	Options options{ 0x101, 1ull << 63 };
-	options = SetState(options, *shadow, State::Other);
-	CHECK_EQ(options.Policy2, (1ull << 63) | (3ull << 28));
-	CHECK_EQ(options.Policy, 0x101ull);		// Policy's bits stay
-	CHECK(GetState(options, *shadow) == State::Other);
-	CHECK_EQ(StateName(*shadow, State::Other), std::wstring(L"Strict Mode"));
-	// a Policy field doesn't read Policy2's bits at the same shift
-	CHECK(GetState(Options{ 0, 1ull << 28 }, fields[5]) == State::Default);	// Disable Win32k System Calls: 28
+	Options options{ { 0x101 } };	// DEP, Force ASLR always on
+	CHECK(GetState(options, *aslr) == State::AlwaysOn);
+	options = SetState(options, *aslr, State::AlwaysOff);
+	CHECK_EQ(options.Word[0], 0x201ull);
+	// the other bits stay
+	options.Word[0] |= 1ull << 63;
+	options.Word[1] = 0x5;
+	options = SetState(options, *FindField(L"Bottom-Up ASLR"), State::AlwaysOn);
+	CHECK_EQ(options.Word[0], 0x8000000000010201ull);
+	CHECK_EQ(options.Word[1], 0x5ull);
+	CHECK(GetState(options, *aslr) == State::AlwaysOff);
+}
+
+TEST(MitigationsAsWindowsWritesThem) {
+	using namespace Mitigations;
+	// the bits Set-ProcessMitigation wrote for each (Windows 11, 2026): a field's first bit (always on), and for some,
+	// with their variant, the next one too (the field's other choice)
+	struct Seen {
+		PCWSTR Name;
+		int Bit;
+		PCWSTR Other;	// the variant's name, if it was written
+	};
+	const Seen seen[] = {
+		{ L"SEHOP", 4, L"Always On, Telemetry" },
+		{ L"Force ASLR (Relocate Images)", 8, L"Always On, Require Relocations" },
+		{ L"Heap Terminate on Corruption", 12 },
+		{ L"Bottom-Up ASLR", 16 },
+		{ L"High Entropy ASLR", 20 },
+		{ L"Strict Handle Checks", 24 },
+		{ L"Disable Win32k System Calls", 28 },
+		{ L"Disable Extension Points", 32 },
+		{ L"Prohibit Dynamic Code", 36 },
+		{ L"Control Flow Guard", 40, L"Export Suppression" },
+		{ L"Block Non-Microsoft Binaries", 44, L"Allow Store" },
+		{ L"Block Non-System Fonts", 48 },
+		{ L"Block Remote Image Loads", 52 },
+		{ L"Block Low Integrity Image Loads", 56 },
+		{ L"Prefer System32 Images", 60 },
+		{ L"Loader Integrity Continuity", 68 },
+		{ L"Strict Control Flow Guard", 72 },
+		{ L"ROP: Stack Pivot", 80 },
+		{ L"ROP: Caller Check", 84 },
+		{ L"ROP: Simulated Execution", 88 },
+		{ L"Export Address Filter", 92 },
+		{ L"Export Address Filter Plus", 96 },
+		{ L"Disallow Child Processes", 100 },
+		{ L"Import Address Filter", 104 },
+		{ L"Module Tampering Protection", 108 },
+		{ L"CET Shadow Stacks", 124, L"Strict Mode" },
+		{ L"Redirection Trust", 148 },
+		{ L"Disable FSCTL System Calls", 156 },
+	};
+	for (auto& s : seen) {
+		auto field = FindField(s.Name);
+		CHECK(field != nullptr);
+		if (!field)
+			continue;
+		CHECK_EQ(field->Shift(), s.Bit);
+		CHECK(!field->Inferred);
+		auto on = SetState({}, *field, State::AlwaysOn);
+		CHECK(IsSet(on, s.Bit) && !IsSet(on, s.Bit + 1));
+		if (s.Other) {
+			auto other = SetState({}, *field, State::Other);
+			CHECK(IsSet(other, s.Bit) && IsSet(other, s.Bit + 1));
+			CHECK_EQ(StateName(*field, State::Other), std::wstring(s.Other));
+		}
+	}
+	// DEP and ATL thunk emulation: bits 0 and 1
+	CHECK(Bits().size() == 2 && Bits()[0].Value == 0x1 && Bits()[1].Value == 0x2);
 }
 
 TEST(MitigationFieldsDontOverlap) {
-	uint64_t seen[2]{};
+	uint64_t seen[Mitigations::Words]{};
+	std::vector<int> options;
 	for (auto& field : Mitigations::Fields()) {
-		CHECK(field.Shift >= 0 && field.Shift < 128 && field.Shift % 4 == 0);
-		auto mask = 3ull << (field.Shift % 64);
-		auto& word = seen[field.Shift / 64];
+		CHECK(field.Option > 0 && field.Shift() < Mitigations::Words * 64);
+		CHECK(std::ranges::find(options, field.Option) == options.end());
+		options.push_back(field.Option);
+		auto mask = 3ull << (field.Shift() % 64);
+		auto& word = seen[field.Shift() / 64];
 		CHECK((word & mask) == 0);
 		word |= mask;
 	}
 	for (auto& bit : Mitigations::Bits())
 		CHECK((seen[0] & bit.Value) == 0);
+	// in option order
+	CHECK(std::ranges::is_sorted(options));
 }
 
 TEST(MitigationStateNames) {
 	using namespace Mitigations;
-	auto fields = Fields();
-	CHECK_EQ(StateName(fields[0], State::Other), std::wstring(L"Always On, Require Relocations"));
-	CHECK_EQ(StateName(fields[1], State::Other), std::wstring(L"Reserved (3)"));
-	CHECK_EQ(StateName(fields[1], State::Default), std::wstring(L"Default"));
+	auto heap = FindField(L"Heap Terminate on Corruption");
+	CHECK(heap != nullptr);
+	if (!heap)
+		return;
+	CHECK_EQ(StateName(*heap, State::Other), std::wstring(L"Reserved (3)"));
+	CHECK_EQ(StateName(*heap, State::Default), std::wstring(L"Default"));
+	CHECK_EQ(StateName(*heap, State::AlwaysOff), std::wstring(L"Always Off"));
 }
 
 TEST(MitigationsParseAndFormat) {
 	using namespace Mitigations;
-	CHECK_EQ(Format({ 0x100 }), std::wstring(L"0000000000000100"));
-	CHECK_EQ(Format({ 0x100, 0x10000000 }), std::wstring(L"00000000100000000000000000000100"));
-	CHECK(Parse(L"100") == Options{ 0x100 });
-	CHECK(Parse(L" 0x1000000000000100 ") == Options{ 0x1000000000000100 });
-	CHECK(Parse(L"ffffffffffffffff") == Options{ ~0ull });
-	// past 16 digits: the high ones are Policy2's
-	CHECK(Parse(L"11112222333344445") == (Options{ 0x1112222333344445, 0x1 }));
-	CHECK(Parse(L"00000000100000000000000000000100") == (Options{ 0x100, 0x10000000 }));
-	CHECK(Parse(Format({ 0xabc, 0xdef })) == (Options{ 0xabc, 0xdef }));
+	CHECK_EQ(Format({ { 0x100 } }), std::wstring(L"0000000000000100"));
+	CHECK_EQ(Format({ { 0x100, 0x10000000 } }), std::wstring(L"00000000100000000000000000000100"));
+	CHECK_EQ(Format({ { 0x1, 0, 0x2 } }), std::wstring(L"000000000000000200000000000000000000000000000001"));
+	CHECK(Parse(L"100") == Options{ { 0x100 } });
+	CHECK(Parse(L" 0x1000000000000100 ") == Options{ { 0x1000000000000100 } });
+	CHECK(Parse(L"ffffffffffffffff") == Options{ { ~0ull } });
+	// past 16 digits: the higher words'
+	CHECK(Parse(L"11112222333344445") == (Options{ { 0x1112222333344445, 0x1 } }));
+	CHECK(Parse(L"200000000000000000000000000000001") == (Options{ { 0x1, 0, 0x2 } }));
+	CHECK(Parse(Format({ { 0xabc, 0xdef, 0x123 } })) == (Options{ { 0xabc, 0xdef, 0x123 } }));
 	CHECK(!Parse(L""));
 	CHECK(!Parse(L"12G"));
-	CHECK(!Parse(L"111122223333444455556666777788889"));	// 33 digits
-	// ordered as one 128-bit number
-	CHECK((Options{ ~0ull, 0 } < Options{ 0, 1 }));
+	CHECK(!Parse(std::wstring(49, L'1')));		// 49 digits
+	// ordered as one number
+	CHECK((Options{ { ~0ull, 0 } } < Options{ { 0, 1 } }));
+	CHECK((Options{ { 0, ~0ull } } < Options{ { 0, 0, 1 } }));
 }
 
 TEST(SplitList) {

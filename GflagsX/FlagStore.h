@@ -107,11 +107,11 @@ namespace FlagStore {
 		DWORD GlobalFlagType{ REG_NONE };
 		std::wstring Debugger;
 		Mitigations::Options Mitigations;
-		// a REG_BINARY MitigationOptions' bytes past the first 16 (mitigations newer than Policy2, which aren't shown),
-		// kept
+		// a REG_BINARY MitigationOptions' bytes past the first 24 (mitigations newer than those shown), kept
 		std::vector<BYTE> MitigationsMore;
-		// REG_QWORD or REG_BINARY (or REG_DWORD); REG_NONE: no value. Written as REG_BINARY when it was, or when Policy2
-		// isn't 0 (a REG_QWORD has Policy only)
+		// REG_QWORD or REG_BINARY (or REG_DWORD); REG_NONE: no value. Written as a REG_BINARY of 24 bytes (and the more
+		// bytes), as Set-ProcessMitigation writes it, when it was one or when the higher words aren't 0 (a REG_QWORD
+		// has the first only)
 		DWORD MitigationsType{ REG_NONE };
 		PageHeapSettings PageHeap;
 		VerifierSettings Verifier;

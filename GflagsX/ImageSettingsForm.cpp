@@ -8,8 +8,8 @@
 using namespace Mitigations;
 
 namespace {
-	// the check boxes' bits, in IDC_DEP.. order
-	const uint64_t s_BitValues[] = { 0x1, 0x2, 0x4 };
+	// the check boxes' bits (Mitigations::Bits), in IDC_DEP.. order
+	const uint64_t s_BitValues[] = { 0x1, 0x2 };
 
 	// the fields' rows, in dialog units: below the check boxes, inside the group box
 	constexpr int FirstRowY = 130, RowHeight = 17, LabelX = 14, LabelWidth = 128, ComboX = 146, ComboWidth = 90;
@@ -23,12 +23,15 @@ LRESULT CImageSettingsForm::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 		MapDialogRect(&rc);
 		return rc;
 	};
+	bool inferred = false;
 	for (int i = 0; i < (int)fields.size(); i++) {
 		int y = FirstRowY + i * RowHeight;
 		CStatic label;
 		auto rcLabel = toPixels(LabelX, y + 2, LabelWidth, 8);
-		label.Create(m_hWnd, &rcLabel, (std::wstring(fields[i].Name) + L":").c_str(), WS_CHILD | WS_VISIBLE | SS_NOPREFIX,
-			0, IDC_FIELD_LABEL_FIRST + i);
+		// a field whose place in the value is inferred is marked, and the note below says so
+		auto name = std::wstring(fields[i].Name) + (fields[i].Inferred ? L" *:" : L":");
+		inferred |= fields[i].Inferred;
+		label.Create(m_hWnd, &rcLabel, name.c_str(), WS_CHILD | WS_VISIBLE | SS_NOPREFIX, 0, IDC_FIELD_LABEL_FIRST + i);
 		label.SetFont(font);
 		CComboBox combo;
 		auto rcCombo = toPixels(ComboX, y, ComboWidth, 120);
@@ -36,8 +39,17 @@ LRESULT CImageSettingsForm::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 			0, IDC_FIELD_FIRST + i);
 		combo.SetFont(font);
 	}
+	int bottom = FirstRowY + (int)fields.size() * RowHeight;
+	if (inferred) {
+		CStatic note;
+		auto rcNote = toPixels(LabelX, bottom + 2, ComboX + ComboWidth - LabelX, 16);
+		note.Create(m_hWnd, &rcNote, L"* Its place in the value is inferred from Windows' list of mitigations, not seen written by Windows.",
+			WS_CHILD | WS_VISIBLE | SS_NOPREFIX, 0, IDC_FIELD_NOTE);
+		note.SetFont(font);
+		bottom += 20;
+	}
 	// the group box around the rows, the form as tall as it all
-	int bottom = FirstRowY + (int)fields.size() * RowHeight + 4;
+	bottom += 4;
 	CRect group;
 	auto hGroup = GetDlgItem(IDC_MITIGATIONS_GROUP);
 	hGroup.GetWindowRect(&group);
@@ -50,7 +62,7 @@ LRESULT CImageSettingsForm::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_IdealSize = CSize(rc.Width(), toPixels(0, bottom + 7, 0, 0).top);
 	SetWindowPos(nullptr, 0, 0, m_IdealSize.cx, m_IdealSize.cy, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 
-	CEdit(GetDlgItem(IDC_MITIGATIONS)).SetLimitText(34);	// 0x and 32 digits
+	CEdit(GetDlgItem(IDC_MITIGATIONS)).SetLimitText(2 + Mitigations::Words * 16);	// 0x and the digits
 	CEdit(GetDlgItem(IDC_DEBUGGER)).SetLimitText(MAX_PATH * 2);
 	Enable(false);
 	return TRUE;
@@ -120,7 +132,7 @@ void CImageSettingsForm::ShowMitigations() {
 	m_Updating = true;
 	SetDlgItemText(IDC_MITIGATIONS, Format(m_Mitigations).c_str());
 	for (int i = 0; i < _countof(s_BitValues); i++)
-		CheckDlgButton(IDC_DEP + i, (m_Mitigations.Policy & s_BitValues[i]) ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(IDC_DEP + i, (m_Mitigations.Word[0] & s_BitValues[i]) ? BST_CHECKED : BST_UNCHECKED);
 
 	auto fields = Fields();
 	for (int i = 0; i < (int)fields.size(); i++) {
@@ -202,9 +214,9 @@ LRESULT CImageSettingsForm::OnEscape(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 LRESULT CImageSettingsForm::OnBitClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
 	auto bit = s_BitValues[wID - IDC_DEP];
 	if (IsDlgButtonChecked(wID))
-		m_Mitigations.Policy |= bit;
+		m_Mitigations.Word[0] |= bit;
 	else
-		m_Mitigations.Policy &= ~bit;
+		m_Mitigations.Word[0] &= ~bit;
 	ShowMitigations();
 	Changed();
 	return 0;

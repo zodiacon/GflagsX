@@ -33,7 +33,7 @@
 #define IDC_MITIGATIONS_GROUP           1013
 #define IDC_DEP                         1014
 #define IDC_DEP_ATL                     1015
-#define IDC_SEHOP                       1016
+#define IDC_FIELD_NOTE                  1016
 #define IDC_SILENTEXIT                  1017
 #define IDC_SILENTEXIT_TEXT             1018
 #define IDC_IMAGE                       1020
