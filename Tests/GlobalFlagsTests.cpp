@@ -4,6 +4,7 @@
 #include "Mitigations.h"
 #include "Helpers.h"
 #include "PageHeap.h"
+#include "CommandLine.h"
 
 using namespace GFlags;
 
@@ -173,6 +174,76 @@ TEST(PageHeapSummaryAndOptions) {
 		CHECK((option.Value & (Full | SizeRange | Random | TargetDlls | Faults)) == 0);	// those have controls of their own
 		seen |= option.Value;
 	}
+}
+
+TEST(FlagAbbreviations) {
+	// gflags.exe's, unique, and every flag has one but Silent Process Exit
+	std::vector<std::wstring> seen;
+	for (auto& flag : All()) {
+		if (flag.Value == MonitorSilentProcessExit) {
+			CHECK(flag.Abbreviation == nullptr);
+			continue;
+		}
+		CHECK(flag.Abbreviation != nullptr);
+		if (!flag.Abbreviation)
+			continue;
+		CHECK(std::ranges::find(seen, flag.Abbreviation) == seen.end());
+		seen.push_back(flag.Abbreviation);
+		CHECK(FindByAbbreviation(flag.Abbreviation) == &flag);
+	}
+	CHECK(FindByAbbreviation(L"HPA") && FindByAbbreviation(L"HPA")->Value == 0x02000000);
+	CHECK(FindByAbbreviation(L"ust")->Value == 0x1000);
+	CHECK(FindByAbbreviation(L"dpd")->Value == 0x80000000);
+	CHECK(!FindByAbbreviation(L"xyz"));
+	CHECK(!FindByAbbreviation(L"hp"));
+}
+
+TEST(CommandLineParse) {
+	using namespace CommandLine;
+	auto ui = Parse({});
+	CHECK(ui && ui->What == Action::Ui);
+	auto usage = Parse({ L"/?" });
+	CHECK(usage && usage->What == Action::Usage);
+
+	auto show = Parse({ L"-r" });
+	CHECK(show && show->What == Action::Show && show->Target == Target::Registry);
+	auto image = Parse({ L"/I", L"notepad.exe", L"+hpa", L"+UST", L"-htc" });
+	CHECK(image.has_value());
+	if (!image)
+		return;
+	CHECK(image->What == Action::Change && image->Target == Target::Image && image->Image == L"notepad.exe");
+	CHECK_EQ(image->Set, 0x02001000u);
+	CHECK_EQ(image->Clear, 0x10u);
+	CHECK_EQ(NewValue(*image, 0x12), 0x02001002u);
+
+	// a value, then changes on it; the last change of a bit wins
+	auto kernel = Parse({ L"/k", L"0x3", L"-soe", L"+0x100", L"-0x100" });
+	CHECK(kernel.has_value());
+	if (kernel) {
+		CHECK(kernel->Value == 3u);
+		CHECK_EQ(NewValue(*kernel, 0xffff), 0x2u);
+	}
+
+	CHECK(!Parse({ L"/x" }));
+	CHECK(!Parse({ L"/i" }));
+	CHECK(!Parse({ L"/i", L"a\\b.exe" }));
+	CHECK(!Parse({ L"/r", L"hpa" }));			// not + or -
+	CHECK(!Parse({ L"/r", L"+nope" }));
+	CHECK(!Parse({ L"/k", L"+dic" }));			// the registry's only
+	CHECK(!Parse({ L"/i", L"a.exe", L"+ksl" }));	// not an image's
+	CHECK(!Parse({ L"/r", L"0x1", L"0x2" }));	// one value
+	CHECK(!Parse({ L"/r", L"+0x100000000" }));
+}
+
+TEST(CommandLineDescribe) {
+	using namespace CommandLine;
+	auto text = Describe(0x02001000, Target::Image);
+	CHECK(text.starts_with(L"0x02001000"));
+	CHECK(text.find(L"hpa  Enable Page Heap") != std::wstring::npos);
+	CHECK(text.find(L"ust  Create User Mode Stack Trace Database") != std::wstring::npos);
+	// a bit that's no flag of the target
+	CHECK(Describe(0x8, Target::Image).find(L"0x00000008 (not flags of an image)") != std::wstring::npos);
+	CHECK(Usage().find(L"hpa  rki  Enable Page Heap") != std::wstring::npos);
 }
 
 TEST(FileName) {

@@ -2,6 +2,7 @@
 #include "FlagsView.h"
 #include "FlagStore.h"
 #include "Helpers.h"
+#include "SystemDialogs.h"
 #include <ClipboardHelper.h>
 
 using namespace GFlags;
@@ -109,6 +110,8 @@ void CFlagsView::OnActivate(bool active) {
 }
 
 void CFlagsView::UpdateUI(CUpdateUIBase& ui) {
+	ui.UIEnable(ID_FLAGS_SPECIALPOOL, true);
+	ui.UIEnable(ID_FLAGS_OBJECTTRACE, true);
 	ui.UIEnable(ID_FLAGS_APPLY, IsModified());
 	ui.UIEnable(ID_VIEW_REFRESH, true);
 	ui.UIEnable(ID_FLAGS_CLEARALL, m_Loaded && m_Pane.GetValue() != 0);
@@ -147,5 +150,39 @@ LRESULT CFlagsView::OnToggle(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*
 LRESULT CFlagsView::OnCopy(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
 	if (auto text = m_Pane.GetSelectedText(); !text.empty())
 		ClipboardHelper::CopyText(m_hWnd, text.c_str());
+	return 0;
+}
+
+LRESULT CFlagsView::OnSpecialPool(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	bool kernel = m_Type == ViewType::Kernel;
+	auto settings = kernel ? FlagStore::ReadKernelSpecialPool() : FlagStore::ReadSpecialPool(FlagStore::Locations::System());
+	if (!settings) {
+		Frame()->ShowError(L"Reading the special pool settings failed.\n\n" + Helpers::ErrorText(settings.error()));
+		return 0;
+	}
+	CSpecialPoolDlg dlg(kernel, *settings);
+	if (dlg.DoModal(Frame()->GetHwnd()) != IDOK || dlg.GetSettings() == *settings)
+		return 0;
+	auto error = kernel ? FlagStore::WriteKernelSpecialPool(dlg.GetSettings()) :
+		FlagStore::WriteSpecialPool(FlagStore::Locations::System(), dlg.GetSettings());
+	if (error != ERROR_SUCCESS)
+		Frame()->ShowError(L"Writing the special pool settings failed.\n\n" + Helpers::ErrorText(error));
+	return 0;
+}
+
+LRESULT CFlagsView::OnObjectTrace(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	bool kernel = m_Type == ViewType::Kernel;
+	auto settings = kernel ? FlagStore::ReadKernelObjectTrace() : FlagStore::ReadObjectTrace(FlagStore::Locations::System());
+	if (!settings) {
+		Frame()->ShowError(L"Reading the object reference tracing settings failed.\n\n" + Helpers::ErrorText(settings.error()));
+		return 0;
+	}
+	CObjectTraceDlg dlg(kernel, *settings);
+	if (dlg.DoModal(Frame()->GetHwnd()) != IDOK || dlg.GetSettings() == *settings)
+		return 0;
+	auto error = kernel ? FlagStore::WriteKernelObjectTrace(dlg.GetSettings()) :
+		FlagStore::WriteObjectTrace(FlagStore::Locations::System(), dlg.GetSettings());
+	if (error != ERROR_SUCCESS)
+		Frame()->ShowError(L"Writing the object reference tracing settings failed.\n\n" + Helpers::ErrorText(error));
 	return 0;
 }

@@ -261,6 +261,60 @@ TEST(VerifierGlobalSettingsIsNotAnImage) {
 	CHECK(GetVerifierProviders(keys.Where) == (std::vector<std::wstring>{ L"vrfcore.dll", L"vfbasics.dll", L"vfcompat.dll" }));
 }
 
+TEST(PoolTags) {
+	CHECK(ParsePoolTag(L"Ntfs") == DWORD('sftN'));
+	CHECK(ParsePoolTag(L"Fat") == DWORD(' taF'));		// padded with spaces
+	CHECK(ParsePoolTag(L"Nt*") == DWORD(' *tN'));
+	CHECK(ParsePoolTag(L"0x200") == 0x200u);			// a size
+	CHECK(!ParsePoolTag(L""));
+	CHECK(!ParsePoolTag(L"Ntfsx"));
+	CHECK(!ParsePoolTag(L"0x0"));
+	CHECK_EQ(FormatPoolTag('sftN'), std::wstring(L"Ntfs"));
+	CHECK_EQ(FormatPoolTag(' taF'), std::wstring(L"Fat"));
+	CHECK_EQ(FormatPoolTag(0x200), std::wstring(L"0x200"));
+	CHECK(ParsePoolTag(FormatPoolTag(' *tN')) == DWORD(' *tN'));
+}
+
+TEST(SpecialPoolRoundTrip) {
+	TestKeys keys;
+	auto none = ReadSpecialPool(keys.Where);
+	CHECK(none.has_value() && none->Tag == 0 && none->VerifyEnd);
+
+	CHECK_EQ(WriteSpecialPool(keys.Where, { 'sftN', false }), (DWORD)ERROR_SUCCESS);
+	auto memory = keys.Where.SessionManager + L"\\Memory Management";
+	CHECK_EQ(keys.ValueType(memory, L"PoolTag"), (DWORD)REG_DWORD);
+	CHECK_EQ(keys.ValueType(memory, L"PoolTagOverruns"), (DWORD)REG_DWORD);
+	auto read = ReadSpecialPool(keys.Where);
+	CHECK(read.has_value() && *read == (SpecialPoolSettings{ 'sftN', false }));
+
+	// off: the values go
+	CHECK_EQ(WriteSpecialPool(keys.Where, {}), (DWORD)ERROR_SUCCESS);
+	CHECK_EQ(keys.ValueType(memory, L"PoolTag"), (DWORD)REG_NONE);
+	CHECK_EQ(keys.ValueType(memory, L"PoolTagOverruns"), (DWORD)REG_NONE);
+}
+
+TEST(ObjectTraceRoundTrip) {
+	TestKeys keys;
+	auto none = ReadObjectTrace(keys.Where);
+	CHECK(none.has_value() && !none->Enabled);
+
+	ObjectTraceSettings s{ true, { L"Proc", L"Thre" }, L"notepad.exe", true };
+	CHECK_EQ(WriteObjectTrace(keys.Where, s), (DWORD)ERROR_SUCCESS);
+	auto kernel = keys.Where.SessionManager + L"\\Kernel";
+	WCHAR text[64]{};
+	DWORD size = sizeof(text);
+	CHECK_EQ(::RegGetValue(HKEY_CURRENT_USER, kernel.c_str(), L"ObTracePoolTags", RRF_RT_REG_SZ, nullptr, text, &size), (LONG)ERROR_SUCCESS);
+	CHECK_EQ(std::wstring(text), std::wstring(L"Proc;Thre"));
+	auto read = ReadObjectTrace(keys.Where);
+	CHECK(read.has_value() && *read == s);
+
+	CHECK_EQ(WriteObjectTrace(keys.Where, {}), (DWORD)ERROR_SUCCESS);
+	for (auto name : { L"ObTracePoolTags", L"ObTraceProcessName", L"ObTracePermanent" })
+		CHECK_EQ(keys.ValueType(kernel, name), (DWORD)REG_NONE);
+	read = ReadObjectTrace(keys.Where);
+	CHECK(read.has_value() && !read->Enabled);
+}
+
 TEST(SilentProcessExitRoundTrip) {
 	TestKeys keys;
 	auto none = ReadSilentProcessExit(keys.Where, L"app.exe");

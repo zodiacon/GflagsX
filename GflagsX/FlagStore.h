@@ -30,6 +30,47 @@ namespace FlagStore {
 	std::expected<uint32_t, DWORD> ReadKernelFlags();
 	DWORD WriteKernelFlags(uint32_t flags);
 
+	// Special pool: the pool allocations of a tag (or of a size) on pages of their own, verifying their end (overruns)
+	// or their start (underruns). In the registry: Session Manager\Memory Management's PoolTag and PoolTagOverruns
+	// (REG_DWORDs); the running system's: SystemSpecialPoolInformation. As gflags.exe has them (its -r/-k +spp).
+	struct SpecialPoolSettings {
+		DWORD Tag{ 0 };				// a pool tag (its characters, the first in the low byte) or a size; 0: off
+		bool VerifyEnd{ true };		// PoolTagOverruns 1 (the default), or 0: the start
+
+		bool operator==(SpecialPoolSettings const&) const = default;
+	};
+
+	std::expected<SpecialPoolSettings, DWORD> ReadSpecialPool(Locations const& where);
+	// a 0 tag removes the values
+	DWORD WriteSpecialPool(Locations const& where, SpecialPoolSettings const& settings);
+	std::expected<SpecialPoolSettings, DWORD> ReadKernelSpecialPool();
+	DWORD WriteKernelSpecialPool(SpecialPoolSettings const& settings);
+
+	// a tag's text ("Ntfs"; trailing spaces dropped) when its characters are printable, otherwise hex ("0x200")
+	std::wstring FormatPoolTag(DWORD tag);
+	// 1 to 4 printable characters (padded with spaces; * and ? match any), or a number in hex (0x...: a size)
+	std::optional<DWORD> ParsePoolTag(std::wstring_view text);
+
+	// Object reference tracing: the references to objects of pool tags, or of the processes of an image, are traced
+	// (temporary: until the object goes; permanent: kept). In the registry: Session Manager\Kernel's ObTracePoolTags
+	// (REG_SZ, separated by ;), ObTraceProcessName (REG_SZ) and ObTracePermanent (REG_DWORD); the running system's:
+	// SystemRefTraceInformation. As gflags.exe has them (its -ro/-ko).
+	struct ObjectTraceSettings {
+		bool Enabled{ false };
+		std::vector<std::wstring> PoolTags;
+		std::wstring ProcessName;		// an image name (notepad.exe)
+		bool Permanent{ false };
+
+		bool operator==(ObjectTraceSettings const&) const = default;
+	};
+
+	// the registry's: enabled if there's a pool tags or a process name value
+	std::expected<ObjectTraceSettings, DWORD> ReadObjectTrace(Locations const& where);
+	// not enabled: the values go
+	DWORD WriteObjectTrace(Locations const& where, ObjectTraceSettings const& settings);
+	std::expected<ObjectTraceSettings, DWORD> ReadKernelObjectTrace();
+	DWORD WriteKernelObjectTrace(ObjectTraceSettings const& settings);
+
 	// an image's page heap options (PageHeap.h), as gflags.exe writes them: PageHeapFlags a REG_SZ ("0x3") or a
 	// REG_DWORD, kept as it was; the DLLs a REG_SZ, separated by spaces; the rest REG_DWORDs. A 0 number (or no DLLs)
 	// removes its value. PageHeapDllRangeStart/End and others aren't read nor written: they stay.

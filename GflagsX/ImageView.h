@@ -10,7 +10,27 @@
 #include <atlscrl.h>
 
 //
-// The executables with Image File Execution Options keys, left to right: the images (with their flags, debugger and
+// The image list with a filter box above it. The list's notifications (and the box's) go on to the parent: the
+// splitter, which passes them to the view.
+//
+class CFilteredListHost : public CWindowImpl<CFilteredListHost> {
+public:
+	DECLARE_WND_CLASS(L"GflagsXFilteredList")
+
+	CEdit Filter;
+	CWindow List;
+
+	BEGIN_MSG_MAP(CFilteredListHost)
+		MESSAGE_HANDLER(WM_SIZE, OnSize)
+		FORWARD_NOTIFICATIONS()
+	END_MSG_MAP()
+
+private:
+	LRESULT OnSize(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
+};
+
+//
+// The executables with Image File Execution Options keys (those whose names have the filter's text), left to right: the images (with their flags, debugger and
 // mitigations), the selected image's flags, and its other settings (CImageSettingsForm, in a scroll container: it can
 // be taller than the pane). Apply writes the flags and the settings together; changes that weren't applied are asked
 // about before another image is shown (the selection goes back if the user keeps them), before Reload, and at exit.
@@ -52,6 +72,7 @@ public:
 		MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
 		MESSAGE_HANDLER(WM_TIMER, OnTimer)
 		NOTIFY_CODE_HANDLER(LVN_KEYDOWN, OnListKeyDown)
+		COMMAND_HANDLER(IDC_FILTER, EN_CHANGE, OnFilterChanged)
 		CHAIN_MSG_MAP(CVirtualListView<CImageView>)
 		CHAIN_MSG_MAP(CViewBase<CImageView>)
 	ALT_MSG_MAP(1)
@@ -60,6 +81,7 @@ public:
 		COMMAND_ID_HANDLER(ID_FLAGS_CLEARALL, OnClearAll)
 		COMMAND_ID_HANDLER(ID_FLAGS_TOGGLE, OnToggle)
 		COMMAND_ID_HANDLER(ID_EDIT_COPY, OnCopy)
+		COMMAND_ID_HANDLER(ID_EDIT_FIND, OnFind)
 		COMMAND_ID_HANDLER(ID_IMAGE_NEW, OnNewImage)
 		COMMAND_ID_HANDLER(ID_IMAGE_DELETE, OnDeleteImage)
 		COMMAND_ID_HANDLER(ID_IMAGE_SILENTEXIT, OnSilentProcessExit)
@@ -89,6 +111,8 @@ private:
 	LRESULT OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled);
 	LRESULT OnTimer(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled);
 	LRESULT OnListKeyDown(int /*idCtrl*/, LPNMHDR hdr, BOOL& bHandled);
+	LRESULT OnFilterChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnFind(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnApply(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnReload(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnClearAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
@@ -103,6 +127,8 @@ private:
 
 	// the images from the registry; the one shown (if it's still there) stays selected
 	void LoadImages();
+	// the list's images: those whose names have the filter's text, sorted
+	void ShowFiltered();
 	// the selected image in the flags and the form (none: they're empty); false if the user kept the shown one's changes
 	bool ShowSelected();
 	// shows the image (read again), or none (empty name)
@@ -119,11 +145,14 @@ private:
 
 	CCustomSplitterWindow m_Splitter;		// the images | m_Right
 	CCustomSplitterWindow m_Right;			// the flags | the settings
+	CFilteredListHost m_ListHost;			// the filter box and m_List
 	CListViewCtrl m_List;
 	CFlagsPane m_Flags;
 	CScrollContainer m_FormContainer;
 	CImageSettingsForm m_Form;
-	std::vector<Image> m_Images;
+	std::vector<Image> m_AllImages;			// as read
+	std::vector<Image> m_Images;			// the list's: the filter's
+	std::wstring m_Filter;
 	std::wstring m_Shown;					// the image in the panes
 	FlagStore::ImageSettings m_ShownSettings;	// as read
 	bool m_Restoring{ false };				// putting the selection back on the shown image

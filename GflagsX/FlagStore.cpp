@@ -14,6 +14,31 @@ extern "C" {
 
 namespace {
 	constexpr ULONG SystemFlagsInformation = 9;
+	constexpr ULONG SystemRefTraceInformation = 86;
+	constexpr ULONG SystemSpecialPoolInformation = 87;
+	constexpr LONG StatusInfoLengthMismatch = 0xC0000004L;
+	constexpr LONG StatusBufferTooSmall = 0xC0000023L;
+
+	// SYSTEM_SPECIAL_POOL_INFORMATION
+	struct SpecialPoolInformation {
+		ULONG PoolTag;
+		ULONG Flags;		// 1: overruns (verify the end)
+	};
+
+	// UNICODE_STRING (winternl.h's declarations of the Nt functions differ from these)
+	struct UnicodeString {
+		USHORT Length;
+		USHORT MaximumLength;
+		PWSTR Buffer;
+	};
+
+	// SYSTEM_REF_TRACE_INFORMATION
+	struct RefTraceInformation {
+		BOOLEAN TraceEnable;
+		BOOLEAN TracePermanent;
+		UnicodeString TraceProcessName;
+		UnicodeString TracePoolTags;
+	};
 	// an x86 build on 64-bit Windows sees the native keys, as Windows reads them
 	constexpr REGSAM View = KEY_WOW64_64KEY;
 
@@ -186,6 +211,191 @@ DWORD FlagStore::WriteKernelFlags(uint32_t flags) {
 	EnableDebugPrivilege();
 	ULONG value = flags;
 	auto status = NtSetSystemInformation(SystemFlagsInformation, &value, sizeof(value));
+	return status < 0 ? RtlNtStatusToDosError(status) : ERROR_SUCCESS;
+}
+
+namespace {
+	std::wstring MemoryManagement(Locations const& where) {
+		return SubKey(where.SessionManager, L"Memory Management");
+	}
+
+	std::wstring KernelKey(Locations const& where) {
+		return SubKey(where.SessionManager, L"Kernel");
+	}
+
+	// "Ntfs;Fat " (ObTracePoolTags) as tags
+	std::vector<std::wstring> SplitTags(std::wstring const& text) {
+		std::vector<std::wstring> tags;
+		size_t start = 0;
+		while (start <= text.size()) {
+			auto end = text.find(L';', start);
+			if (end == std::wstring::npos)
+				end = text.size();
+			if (end > start)
+				tags.push_back(text.substr(start, end - start));
+			start = end + 1;
+		}
+		return tags;
+	}
+
+	std::wstring JoinTags(std::vector<std::wstring> const& tags) {
+		std::wstring text;
+		for (auto& tag : tags)
+			if (!tag.empty())
+				text += (text.empty() ? L"" : L";") + tag;
+		return text;
+	}
+
+	UnicodeString StringOf(std::wstring const& text) {
+		UnicodeString string{};
+		string.Length = string.MaximumLength = USHORT(text.size() * sizeof(WCHAR));
+		string.Buffer = const_cast<PWSTR>(text.c_str());
+		return string;
+	}
+
+	// a string the kernel returned, inside the buffer it filled (anything else: empty)
+	std::wstring StringFrom(UnicodeString const& string, std::vector<BYTE> const& buffer) {
+		auto start = reinterpret_cast<BYTE const*>(string.Buffer);
+		if (!start || string.Length == 0 || start < buffer.data() || start + string.Length > buffer.data() + buffer.size())
+			return {};
+		return std::wstring(string.Buffer, string.Length / sizeof(WCHAR));
+	}
+}
+
+std::expected<SpecialPoolSettings, DWORD> FlagStore::ReadSpecialPool(Locations const& where) {
+	wil::unique_hkey key;
+	auto error = OpenKey(where.Root, MemoryManagement(where), KEY_READ, key);
+	if (error == ERROR_FILE_NOT_FOUND)
+		return SpecialPoolSettings{};
+	if (error != ERROR_SUCCESS)
+		return std::unexpected(error);
+	SpecialPoolSettings settings;
+	settings.Tag = ReadDword(key.get(), L"PoolTag", 0);
+	settings.VerifyEnd = ReadDword(key.get(), L"PoolTagOverruns", 1) != 0;
+	return settings;
+}
+
+DWORD FlagStore::WriteSpecialPool(Locations const& where, SpecialPoolSettings const& settings) {
+	wil::unique_hkey key;
+	auto error = CreateKey(where.Root, MemoryManagement(where), key);
+	if (error != ERROR_SUCCESS)
+		return error;
+	if (settings.Tag == 0) {
+		error = DeleteValue(key.get(), L"PoolTag");
+		return error != ERROR_SUCCESS ? error : DeleteValue(key.get(), L"PoolTagOverruns");
+	}
+	error = SetDword(key.get(), L"PoolTag", settings.Tag);
+	return error != ERROR_SUCCESS ? error : SetDword(key.get(), L"PoolTagOverruns", settings.VerifyEnd ? 1 : 0);
+}
+
+std::expected<SpecialPoolSettings, DWORD> FlagStore::ReadKernelSpecialPool() {
+	SpecialPoolInformation info{};
+	auto status = NtQuerySystemInformation(SystemSpecialPoolInformation, &info, sizeof(info), nullptr);
+	if (status < 0)
+		return std::unexpected(RtlNtStatusToDosError(status));
+	return SpecialPoolSettings{ info.PoolTag, info.Flags == 1 };
+}
+
+DWORD FlagStore::WriteKernelSpecialPool(SpecialPoolSettings const& settings) {
+	EnableDebugPrivilege();
+	SpecialPoolInformation info{ settings.Tag, settings.VerifyEnd ? 1ul : 0ul };
+	auto status = NtSetSystemInformation(SystemSpecialPoolInformation, &info, sizeof(info));
+	return status < 0 ? RtlNtStatusToDosError(status) : ERROR_SUCCESS;
+}
+
+std::wstring FlagStore::FormatPoolTag(DWORD tag) {
+	std::wstring text;
+	for (int i = 0; i < 4; i++) {
+		auto c = wchar_t((tag >> (i * 8)) & 0xff);
+		if (c < 0x20 || c > 0x7e)
+			return std::format(L"0x{:X}", tag);
+		text += c;
+	}
+	while (!text.empty() && text.back() == L' ')
+		text.pop_back();
+	// all spaces: not a tag anyone types
+	return text.empty() ? std::format(L"0x{:X}", tag) : text;
+}
+
+std::optional<DWORD> FlagStore::ParsePoolTag(std::wstring_view text) {
+	if (text.size() > 2 && text[0] == L'0' && (text[1] == L'x' || text[1] == L'X')) {
+		auto value = Helpers::ParseNumber(text);
+		return value && *value ? value : std::nullopt;
+	}
+	if (text.empty() || text.size() > 4)
+		return std::nullopt;
+	DWORD tag = 0;
+	for (int i = 0; i < 4; i++) {
+		auto c = i < (int)text.size() ? text[i] : L' ';
+		if (c < 0x20 || c > 0x7e)
+			return std::nullopt;
+		tag |= DWORD(c) << (i * 8);
+	}
+	return tag;
+}
+
+std::expected<ObjectTraceSettings, DWORD> FlagStore::ReadObjectTrace(Locations const& where) {
+	wil::unique_hkey key;
+	auto error = OpenKey(where.Root, KernelKey(where), KEY_READ, key);
+	if (error == ERROR_FILE_NOT_FOUND)
+		return ObjectTraceSettings{};
+	if (error != ERROR_SUCCESS)
+		return std::unexpected(error);
+	ObjectTraceSettings settings;
+	settings.PoolTags = SplitTags(ReadString(key.get(), L"ObTracePoolTags"));
+	settings.ProcessName = ReadString(key.get(), L"ObTraceProcessName");
+	settings.Permanent = ReadDword(key.get(), L"ObTracePermanent", 0) != 0;
+	settings.Enabled = !settings.PoolTags.empty() || !settings.ProcessName.empty();
+	return settings;
+}
+
+DWORD FlagStore::WriteObjectTrace(Locations const& where, ObjectTraceSettings const& settings) {
+	wil::unique_hkey key;
+	auto error = CreateKey(where.Root, KernelKey(where), key);
+	if (error != ERROR_SUCCESS)
+		return error;
+	auto tags = settings.Enabled ? JoinTags(settings.PoolTags) : L"";
+	auto process = settings.Enabled ? settings.ProcessName : L"";
+	for (auto e : {
+		tags.empty() ? DeleteValue(key.get(), L"ObTracePoolTags") : SetString(key.get(), L"ObTracePoolTags", tags),
+		process.empty() ? DeleteValue(key.get(), L"ObTraceProcessName") : SetString(key.get(), L"ObTraceProcessName", process),
+		settings.Enabled ? SetDword(key.get(), L"ObTracePermanent", settings.Permanent ? 1 : 0) : DeleteValue(key.get(), L"ObTracePermanent") })
+		if (e != ERROR_SUCCESS)
+			return e;
+	return ERROR_SUCCESS;
+}
+
+std::expected<ObjectTraceSettings, DWORD> FlagStore::ReadKernelObjectTrace() {
+	EnableDebugPrivilege();
+	std::vector<BYTE> buffer(sizeof(RefTraceInformation) + 1024);
+	LONG status;
+	for (int tries = 0; tries < 4; tries++) {
+		ULONG needed = 0;
+		status = NtQuerySystemInformation(SystemRefTraceInformation, buffer.data(), (ULONG)buffer.size(), &needed);
+		if (status != StatusInfoLengthMismatch && status != StatusBufferTooSmall)
+			break;
+		buffer.resize(std::max<size_t>(needed, buffer.size() * 2));
+	}
+	if (status < 0)
+		return std::unexpected(RtlNtStatusToDosError(status));
+	auto info = reinterpret_cast<RefTraceInformation const*>(buffer.data());
+	ObjectTraceSettings settings;
+	settings.Enabled = info->TraceEnable != 0;
+	settings.Permanent = info->TracePermanent != 0;
+	settings.ProcessName = StringFrom(info->TraceProcessName, buffer);
+	settings.PoolTags = SplitTags(StringFrom(info->TracePoolTags, buffer));
+	return settings;
+}
+
+DWORD FlagStore::WriteKernelObjectTrace(ObjectTraceSettings const& settings) {
+	EnableDebugPrivilege();
+	auto tags = JoinTags(settings.PoolTags);
+	RefTraceInformation info{};
+	info.TraceEnable = settings.Enabled;
+	info.TracePermanent = settings.Permanent;
+	info.TraceProcessName = StringOf(settings.ProcessName);
+	info.TracePoolTags = StringOf(tags);
+	auto status = NtSetSystemInformation(SystemRefTraceInformation, &info, sizeof(info));
 	return status < 0 ? RtlNtStatusToDosError(status) : ERROR_SUCCESS;
 }
 

@@ -52,7 +52,8 @@ Include paths are `..\wtlhelper\WTLHelper` and `..\wtlhelper\WTL` (WTLHelper hea
   - `GlobalFlags.h/.cpp` (namespace `GFlags`: `GlobalFlags` is a Win32 function): the flag table (`All()`), each flag's
     value, `Target`s (Registry, Kernel, Image) and `Category`; `ForTarget`, `TargetMask` (Apply writes the bits no
     check box of the target shows as they were read; the views' status names the set ones). The table is GFlags' (all
-    32 bits). A flag is added or retargeted here only.
+    32 bits), with gflags.exe's abbreviations (`FindByAbbreviation`; Silent Process Exit has none). A flag is added or
+    retargeted here only.
   - `Mitigations.h/.cpp`: MitigationOptions' first 128 bits as `Options` (`Policy`: winbase.h's
     `PROCESS_CREATION_MITIGATION_POLICY_*`, `Policy2`: `..._POLICY2_*`): DEP, ATL thunk emulation and SEHOP as
     `Policy` bits (`Bits()`), every other mitigation a 2-bit field at a multiple of 4 (`Fields()`, `Shift` 64 and up
@@ -73,9 +74,17 @@ Include paths are `..\wtlhelper\WTLHelper` and `..\wtlhelper\WTL` (WTLHelper hea
     values the UI doesn't show (`PageHeapDllRangeStart`/`End`) are left alone. `GetImages` skips keys in braces
     (`{ApplicationVerifierGlobalSettings}`, whose `VerifierProviders` lists the installed providers).
   - `PageHeap.h/.cpp`: `PageHeapFlags`' bits (read off gflags.exe's `/p` code), the check box options and `Summary`.
+  - Special pool (`SpecialPoolSettings`: Memory Management's `PoolTag`/`PoolTagOverruns`, `SystemSpecialPoolInformation`)
+    and object reference tracing (`ObjectTraceSettings`: Session Manager\Kernel's `ObTrace*`,
+    `SystemRefTraceInformation`), of the registry or the running system, as gflags.exe's `+spp`, `-ro` and `-ko` have
+    them; `FormatPoolTag`/`ParsePoolTag` (a tag's first character is its low byte; `0x...` is a size).
+  - `CommandLine.h/.cpp`: the command line, GFlags style (`/r`, `/k`, `/i image`, then `+abbr`, `-abbr`, `+0x...`,
+    `0x...`): `Parse` (errors are messages), `NewValue`, `Describe`, `Usage`.
   - `Helpers`: error text, splitting and joining lists and words, numbers typed (`ParseNumber`), file names.
-- `GflagsX.cpp`: `_tWinMain`: settings load from `Software\ScorpioSoftware\GflagsX`, `WTLHelper::InitDarkMode` runs
-  *before* any window is created, then the frame and its message loop.
+- `GflagsX.cpp`: `_tWinMain`: with arguments, `RunCommand` does the command line's work without the UI (its output:
+  stdout where it's redirected, else the console it was started from, else a message box; the exit code is 0, 1 for a
+  bad command line, or the Win32 error). Without: settings load from `Software\ScorpioSoftware\GflagsX`,
+  `WTLHelper::InitDarkMode` runs *before* any window is created, then the frame and its message loop.
 - `AppSettings.h`: WTLHelper `Settings` (`SETTING`/`DEF_SETTING`); the singleton is `AppSettings::Get()`; call `Save()`
   after a change.
 - `MainFrm.*`: `CMainFrame` hosts three fixed tabs in `CMainTabView` (no close buttons, no dragging), made in `OnCreate`
@@ -90,12 +99,15 @@ Include paths are `..\wtlhelper\WTLHelper` and `..\wtlhelper\WTL` (WTLHelper hea
     by a click on the box, Space or a double click; `OnChanged` tells the host. Not a view: a child the views host.
   - `CFlagsView`: the Registry and Kernel tabs (one class, by `ViewType`): the pane, the value as read, Apply and Reload.
     After applying the kernel's flags, it reads them back and names the ones the kernel didn't take.
-  - `CImageView`: the images (owner-data list) | the flags pane | `CImageSettingsForm` in a `CScrollContainer`. The
+  - `CImageView`: the images (owner-data list, under a filter box: `CFilteredListHost`, which forwards the list's
+    notifications; `m_AllImages` as read, `m_Images` the filter's) | the flags pane | `CImageSettingsForm` in a `CScrollContainer`. The
     selection is shown after `SelectDelay`; changes not applied are asked about first, and the selection goes back if
     the user keeps them (`m_Restoring`). Apply writes the flags and the form's settings together, and removes the Silent
     Process Exit key when its flag is off (as the WPF version did).
   - `CImageSettingsForm`: a child dialog (`IDD_IMAGESETTINGS`); a row per `Mitigations::Fields()` entry (label and combo
     box, `IDC_FIELD_LABEL_FIRST`/`IDC_FIELD_FIRST` + index) is made in `OnInitDialog`, below the template's controls.
+- `SystemDialogs.*`: `CSpecialPoolDlg` and `CObjectTraceDlg`, the Registry and Kernel tabs' (Flags menu), written on
+  OK for the tab's target.
 - `ImageDialogs.*`: `CNewImageDlg` (a name, or Browse for an executable), `CSilentProcessExitDlg` (written on OK, a
   key of its own), and `CPageHeapDlg` and `CVerifierDlg`, whose settings go to the form, written on Apply; OK checks the
   image flag that turns them on (Enable Page Heap, Enable Application Verifier).

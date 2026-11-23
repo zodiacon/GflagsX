@@ -78,6 +78,7 @@
     <ClCompile Include="..\GflagsX\GlobalFlags.cpp" />
     <ClCompile Include="..\GflagsX\Mitigations.cpp" />
     <ClCompile Include="..\GflagsX\PageHeap.cpp" />
+    <ClCompile Include="..\GflagsX\CommandLine.cpp" />
     <ClCompile Include="..\GflagsX\FlagStore.cpp" />
     <ClCompile Include="..\GflagsX\Helpers.cpp" />
   </ItemGroup>

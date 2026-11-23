@@ -20,9 +20,27 @@ A native Windows app (C++, WTL), with dark mode and per-monitor DPI support. It 
   - Silent Process Exit: a monitor process, a notification, dumps (folder, type as GFlags' presets or custom MINIDUMP_TYPE flags, how many, modules to ignore).
 
   New Image adds an executable (typed, or picked with Browse), Delete Image removes its key.
+- The images can be filtered by name (Ctrl+F).
+- Special pool (a pool tag or size, verifying the end or the start) and object reference tracing (pool tags or an
+  image's processes, temporary or permanent), in the registry or for the running system: the Flags menu, on the
+  Registry and Kernel tabs.
 - Flags are check boxes, sortable by name, value and what they affect. Apply writes them, Reload reads them again;
   changes that weren't applied are asked about before they're lost. The bits no check box shows are kept as they are.
 - Settings kept in `HKCU\Software\ScorpioSoftware\GflagsX`.
+
+## Command line
+
+GFlags style, without the UI (`GflagsX /?` lists the flags' abbreviations):
+
+```
+GflagsX /r [changes]          the system's flags in the registry (for the next boot)
+GflagsX /k [changes]          the running system's flags
+GflagsX /i image [changes]    an image's flags
+```
+
+A change is `+abbr` or `-abbr` (`+hpa`, `-ust`), `+0x...` or `-0x...` (bits), or `0x...` (the value). Without changes,
+the flags are shown. The output goes to the console GflagsX was started from (it runs as administrator: from an
+elevated console, or redirected), or to a message box.
 
 ## Building
 

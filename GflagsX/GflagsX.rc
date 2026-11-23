@@ -77,6 +77,8 @@ BEGIN
     POPUP "&Edit"
     BEGIN
         MENUITEM "&Copy\tCtrl+C",               ID_EDIT_COPY
+        MENUITEM SEPARATOR
+        MENUITEM "&Filter Images\tCtrl+F",      ID_EDIT_FIND
     END
     POPUP "&View"
     BEGIN
@@ -93,6 +95,9 @@ BEGIN
     BEGIN
         MENUITEM "&Apply\tCtrl+S",              ID_FLAGS_APPLY
         MENUITEM "&Clear All",                  ID_FLAGS_CLEARALL
+        MENUITEM SEPARATOR
+        MENUITEM "Special &Pool...",            ID_FLAGS_SPECIALPOOL
+        MENUITEM "Object Reference &Tracing...", ID_FLAGS_OBJECTTRACE
     END
     POPUP "&Image"
     BEGIN
@@ -147,6 +152,7 @@ END
 IDR_MAINFRAME ACCELERATORS
 BEGIN
     "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "F",            ID_EDIT_FIND,           VIRTKEY, CONTROL, NOINVERT
     "S",            ID_FLAGS_APPLY,         VIRTKEY, CONTROL, NOINVERT
     "N",            ID_IMAGE_NEW,           VIRTKEY, CONTROL, NOINVERT
     "1",            ID_VIEW_REGISTRY,       VIRTKEY, CONTROL, NOINVERT
@@ -274,6 +280,38 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,203,185,50,14
 END
 
+IDD_SPECIALPOOL DIALOGEX 0, 0, 250, 130
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Special Pool"
+FONT 9, "Segoe UI", 0, 0, 0x0
+BEGIN
+    LTEXT           "",IDC_TARGET_TEXT,7,7,236,16
+    CONTROL         "&Enable special pool",IDC_SPP_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,28,236,10
+    LTEXT           "Pool &tag or size:",IDC_SPP_LABEL,18,45,64,8
+    EDITTEXT        IDC_SPP_TAG,84,43,60,14,ES_AUTOHSCROLL
+    LTEXT           "4 characters at most (* and ? match any), or a size in hex (0x...)",IDC_SPP_HINT,18,61,225,8
+    CONTROL         "Verify the e&nd (catch overruns)",IDC_SPP_END,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,18,76,200,10
+    CONTROL         "Verify the &start (catch underruns)",IDC_SPP_START,"Button",BS_AUTORADIOBUTTON,18,89,200,10
+    DEFPUSHBUTTON   "OK",IDOK,139,109,50,14,WS_GROUP
+    PUSHBUTTON      "Cancel",IDCANCEL,193,109,50,14
+END
+
+IDD_OBJECTTRACE DIALOGEX 0, 0, 250, 122
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Object Reference Tracing"
+FONT 9, "Segoe UI", 0, 0, 0x0
+BEGIN
+    LTEXT           "",IDC_TARGET_TEXT,7,7,236,16
+    CONTROL         "&Enable object reference tracing",IDC_OBT_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,28,236,10
+    LTEXT           "Pool &tags (separated by ;):",IDC_OBT_TAGS_LABEL,18,45,100,8
+    EDITTEXT        IDC_OBT_TAGS,120,43,123,14,ES_AUTOHSCROLL
+    LTEXT           "&Process (image name):",IDC_OBT_PROCESS_LABEL,18,63,100,8
+    EDITTEXT        IDC_OBT_PROCESS,120,61,123,14,ES_AUTOHSCROLL
+    CONTROL         "Per&manent traces (kept after the objects are gone)",IDC_OBT_PERMANENT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,18,81,225,10
+    DEFPUSHBUTTON   "OK",IDOK,139,101,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,193,101,50,14
+END
+
 IDD_ABOUTBOX DIALOGEX 0, 0, 213, 84
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About GFlagsX"
@@ -344,6 +382,9 @@ BEGIN
     ID_FLAGS_TOGGLE         "Check or uncheck the selected flags\nCheck / Uncheck"
     ID_IMAGE_NEW            "Add an executable to set flags and options for\nNew Image"
     ID_IMAGE_DELETE         "Delete the selected executable's settings\nDelete Image"
+    ID_FLAGS_SPECIALPOOL    "Set the pool tag (or size) whose allocations go to special pool\nSpecial Pool"
+    ID_FLAGS_OBJECTTRACE    "Trace the references to objects of pool tags or of an image's processes\nObject Reference Tracing"
+    ID_EDIT_FIND            "Show the images whose names have the text typed\nFilter Images"
     ID_IMAGE_SILENTEXIT     "Set what happens when the selected executable's processes exit\nSilent Process Exit"
     ID_IMAGE_PAGEHEAP       "Set the selected executable's page heap options\nPage Heap"
     ID_IMAGE_VERIFIER       "Set the Application Verifier providers and flags of the selected executable\nApplication Verifier"

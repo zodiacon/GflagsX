@@ -7,6 +7,8 @@
 #define IDD_IMAGESETTINGS               103
 #define IDD_PAGEHEAP                    104
 #define IDD_VERIFIER                    105
+#define IDD_SPECIALPOOL                 106
+#define IDD_OBJECTTRACE                 107
 #define IDR_MAINFRAME                   128
 // the context menus: 0 the flags, 1 the images
 #define IDR_CONTEXT                     129
@@ -74,6 +76,20 @@
 #define IDC_PH_FLAGS                    1073
 #define IDC_VRF_PROVIDERS               1080
 #define IDC_VRF_FLAGS                   1081
+#define IDC_FILTER                      1090
+#define IDC_TARGET_TEXT                 1200
+#define IDC_SPP_ENABLE                  1201
+#define IDC_SPP_LABEL                   1202
+#define IDC_SPP_TAG                     1203
+#define IDC_SPP_HINT                    1204
+#define IDC_SPP_END                     1205
+#define IDC_SPP_START                   1206
+#define IDC_OBT_ENABLE                  1210
+#define IDC_OBT_TAGS_LABEL              1211
+#define IDC_OBT_TAGS                    1212
+#define IDC_OBT_PROCESS_LABEL           1213
+#define IDC_OBT_PROCESS                 1214
+#define IDC_OBT_PERMANENT               1215
 // the image settings' mitigation fields (Mitigations::Fields order): a label and a combo box each, made at run time
 #define IDC_FIELD_LABEL_FIRST           1100
 #define IDC_FIELD_FIRST                 1150
@@ -90,6 +106,8 @@
 #define ID_FLAGS_TOGGLE                 32780
 #define ID_IMAGE_PAGEHEAP               32781
 #define ID_IMAGE_VERIFIER               32782
+#define ID_FLAGS_SPECIALPOOL            32783
+#define ID_FLAGS_OBJECTTRACE            32784
 // the status bar pane with the active view's summary
 #define ID_PANE_VIEW                    33000
 
@@ -98,7 +116,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        211
-#define _APS_NEXT_COMMAND_VALUE         32783
+#define _APS_NEXT_COMMAND_VALUE         32785
 #define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

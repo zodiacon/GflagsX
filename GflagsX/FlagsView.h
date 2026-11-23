@@ -36,6 +36,8 @@ public:
 		COMMAND_ID_HANDLER(ID_FLAGS_CLEARALL, OnClearAll)
 		COMMAND_ID_HANDLER(ID_FLAGS_TOGGLE, OnToggle)
 		COMMAND_ID_HANDLER(ID_EDIT_COPY, OnCopy)
+		COMMAND_ID_HANDLER(ID_FLAGS_SPECIALPOOL, OnSpecialPool)
+		COMMAND_ID_HANDLER(ID_FLAGS_OBJECTTRACE, OnObjectTrace)
 		CHAIN_MSG_MAP_ALT(CViewBase<CFlagsView>, 1)
 	END_MSG_MAP()
 
@@ -52,6 +54,9 @@ private:
 	LRESULT OnClearAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnToggle(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnCopy(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	// the tab's special pool and object reference tracing (the registry's or the running system's): written on OK
+	LRESULT OnSpecialPool(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnObjectTrace(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 
 	// reads the flags (an error leaves the tab with nothing checked, and says so)
 	void Load();

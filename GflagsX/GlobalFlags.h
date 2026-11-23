@@ -33,6 +33,7 @@ namespace GFlags {
 		uint32_t Value;
 		Target Targets;
 		Category Category;
+		PCWSTR Abbreviation;	// gflags.exe's ("hpa"); nullptr: none
 	};
 
 	// Silent Process Exit (FLG_MONITOR_SILENT_PROCESS_EXIT): an image's only; its settings are in their own key
@@ -46,6 +47,9 @@ namespace GFlags {
 	std::vector<Flag const*> ForTarget(Target target);
 	// the bits the target's flags cover: Apply writes the value with the others as they were
 	uint32_t TargetMask(Target target);
+
+	// the flag with the abbreviation (without case); nullptr: none
+	Flag const* FindByAbbreviation(std::wstring_view abbreviation);
 
 	// "Kernel Mode", "User Mode", "Kernel and User Mode"
 	PCWSTR CategoryName(Category category);

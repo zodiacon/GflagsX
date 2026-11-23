@@ -24,10 +24,15 @@ CImageView::CImageView(IMainFrame* frame) : CViewBase(frame), m_Flags(frame, GFl
 
 LRESULT CImageView::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/) {
 	m_hWndClient = m_Splitter.Create(m_hWnd, rcDefault, nullptr, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS);
-	m_List.Create(m_Splitter, rcDefault, nullptr,
+	m_ListHost.Create(m_Splitter, rcDefault, nullptr, WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS);
+	m_ListHost.Filter.Create(m_ListHost, rcDefault, nullptr, WS_CHILD | WS_VISIBLE | WS_TABSTOP | ES_AUTOHSCROLL, 0, IDC_FILTER);
+	m_ListHost.Filter.SetCueBannerText(L"Filter images (Ctrl+F)", TRUE);
+	m_List.Create(m_ListHost, rcDefault, nullptr,
 		WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_TABSTOP | LVS_REPORT | LVS_OWNERDATA | LVS_SHOWSELALWAYS | LVS_SINGLESEL);
 	m_List.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_INFOTIP);
 	SuspendHookWhilePainting(m_List);
+	m_ListHost.List = m_List;
+	m_ListHost.Filter.SetFont(m_List.GetFont());
 
 	auto scale = [this](int width) { return DpiHelper::Scale(width, m_hWnd); };
 	m_List.InsertColumn(0, L"Image", LVCFMT_LEFT, scale(160));
@@ -57,7 +62,7 @@ LRESULT CImageView::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 	};
 
 	m_Right.SetSplitterPanes(m_Flags, m_FormContainer);
-	m_Splitter.SetSplitterPanes(m_List, m_Right);
+	m_Splitter.SetSplitterPanes(m_ListHost, m_Right);
 	auto& settings = AppSettings::Get();
 	m_Splitter.SetSplitterPosPct(std::clamp(settings.ImagesSplitterPos(), 10, 80), false);
 	m_Right.SetSplitterPosPct(std::clamp(settings.FlagsSplitterPos(), 20, 80), false);
@@ -75,6 +80,19 @@ LRESULT CImageView::OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 }
 
 BOOL CImageView::PreTranslateMessage(MSG* pMsg) {
+	// in the filter box: Escape clears it, Enter and Down go to the list
+	if (pMsg->message == WM_KEYDOWN && pMsg->hwnd == m_ListHost.Filter) {
+		if (pMsg->wParam == VK_ESCAPE) {
+			m_ListHost.Filter.SetWindowText(L"");
+			return TRUE;
+		}
+		if (pMsg->wParam == VK_RETURN || pMsg->wParam == VK_DOWN) {
+			m_List.SetFocus();
+			if (!m_List.GetSelectedCount() && m_List.GetItemCount() > 0)
+				m_List.SetItemState(0, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+			return TRUE;
+		}
+	}
 	if (pMsg->message < WM_KEYFIRST || pMsg->message > WM_KEYLAST || !m_Form.IsChild(pMsg->hwnd))
 		return FALSE;
 	return m_Form.IsDialogMessage(pMsg);
@@ -83,14 +101,12 @@ BOOL CImageView::PreTranslateMessage(MSG* pMsg) {
 void CImageView::LoadImages() {
 	auto names = GetImages(Where());
 	m_Error = names ? L"" : Helpers::ErrorText(names.error());
-	m_Images.clear();
+	m_AllImages.clear();
 	for (auto& name : names.value_or(std::vector<std::wstring>{})) {
 		auto settings = ReadImage(Where(), name);
-		m_Images.push_back({ name, settings.value_or(ImageSettings{}), settings.has_value() });
+		m_AllImages.push_back({ name, settings.value_or(ImageSettings{}), settings.has_value() });
 	}
-	Sort(m_List);
-	m_List.SetItemCountEx((int)m_Images.size(), LVSICF_NOSCROLL);
-	m_List.Invalidate();
+	ShowFiltered();
 
 	// the first time, the first image
 	auto shown = m_Shown.empty() && !m_Images.empty() && !m_List.GetSelectedCount() ? m_Images[0].Name : m_Shown;
@@ -98,6 +114,39 @@ void CImageView::LoadImages() {
 	SelectImage(shown);
 	m_Restoring = false;
 	ShowImage(FindImage(shown) >= 0 ? shown : L"");
+}
+
+void CImageView::ShowFiltered() {
+	auto matches = [this](std::wstring const& name) {
+		auto same = [](wchar_t a, wchar_t b) { return towlower(a) == towlower(b); };
+		return m_Filter.empty() || !std::ranges::search(name, m_Filter, same).empty();
+	};
+	m_Images.clear();
+	for (auto& image : m_AllImages)
+		if (matches(image.Name))
+			m_Images.push_back(image);
+	Sort(m_List);
+	m_List.SetItemCountEx((int)m_Images.size(), LVSICF_NOSCROLL);
+	m_List.Invalidate();
+}
+
+LRESULT CImageView::OnFilterChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	CString text;
+	m_ListHost.Filter.GetWindowText(text);
+	m_Filter = Helpers::Trim((PCWSTR)text);
+	ShowFiltered();
+	// the shown image stays shown (and selected, if it passes the filter)
+	m_Restoring = true;
+	SelectImage(m_Shown);
+	m_Restoring = false;
+	UpdateStatus();
+	return 0;
+}
+
+LRESULT CImageView::OnFind(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	m_ListHost.Filter.SetFocus();
+	m_ListHost.Filter.SetSelAll();
+	return 0;
 }
 
 int CImageView::FindImage(std::wstring const& name) const {
@@ -127,6 +176,9 @@ void CImageView::ShowImage(std::wstring const& name) {
 			if (int row = FindImage(name); row >= 0) {
 				m_Images[row].Settings = settings;
 				m_Images[row].Readable = true;
+				for (auto& image : m_AllImages)
+					if (_wcsicmp(image.Name.c_str(), name.c_str()) == 0)
+						image = m_Images[row];
 				m_List.RedrawItems(row, row);
 			}
 		}
@@ -222,7 +274,8 @@ bool CImageView::CanClose() {
 std::wstring CImageView::GetStatusText() const {
 	if (!m_Error.empty())
 		return std::format(L"Reading the images failed: {}", m_Error);
-	auto text = std::format(L"{} image{}", m_Images.size(), m_Images.size() == 1 ? L"" : L"s");
+	auto text = m_Filter.empty() ? std::format(L"{} image{}", m_Images.size(), m_Images.size() == 1 ? L"" : L"s") :
+		std::format(L"{} of {} images", m_Images.size(), m_AllImages.size());
 	if (!m_Shown.empty()) {
 		text += std::format(L" | {}: flags {}", m_Shown, GFlags::FormatValue(m_ShownSettings.GlobalFlag));
 		if (IsModified())
@@ -259,6 +312,7 @@ void CImageView::UpdateUI(CUpdateUIBase& ui) {
 	ui.UIEnable(ID_IMAGE_SILENTEXIT, shown);
 	ui.UIEnable(ID_IMAGE_PAGEHEAP, shown);
 	ui.UIEnable(ID_IMAGE_VERIFIER, shown);
+	ui.UIEnable(ID_EDIT_FIND, true);
 	auto focus = ::GetFocus();
 	ui.UIEnable(ID_EDIT_COPY, focus == m_List ? selected : m_Flags.HasFocus() ? m_Flags.HasSelection() : m_Form.IsChild(focus));
 }
@@ -466,5 +520,16 @@ LRESULT CImageView::OnVerifier(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 	m_Form.SetVerifier(dlg.GetSettings());
 	m_Flags.Check(GFlags::EnableApplicationVerifier, true);
 	UpdateStatus();
+	return 0;
+}
+
+LRESULT CFilteredListHost::OnSize(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/) {
+	CRect rc;
+	GetClientRect(&rc);
+	int height = DpiHelper::Scale(24, m_hWnd);
+	if (Filter)
+		Filter.MoveWindow(0, 0, rc.Width(), height);
+	if (List)
+		List.MoveWindow(0, height, rc.Width(), std::max(0, (int)rc.Height() - height));
 	return 0;
 }
