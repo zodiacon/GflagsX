@@ -67,8 +67,13 @@ Include paths are `..\wtlhelper\WTLHelper` and `..\wtlhelper\WTL` (WTLHelper hea
     (`MitigationsMore`); a non-zero `Policy2` makes it `REG_BINARY`. Zero or empty values are removed rather than
     written. Silent Process Exit: `ReportingMode` bits; `DumpType` is `MINIDUMP_TYPE` flags, with GFlags' presets
     (`MicroDump` 0x88 as documented; `MiniDump` 0x121 and `HeapDump` 0x10B25 are gflagsui.dll's constants) and any
-    other value its Custom; `MaxNumberOfDumpFiles` (0: no value).
-  - `Helpers`: error text, splitting and joining lists, file names.
+    other value its Custom; `MaxNumberOfDumpFiles` (0: no value). Page heap (`PageHeapSettings`) and Application
+    Verifier (`VerifierSettings`) are values of the image's key, written by `WriteImage` as gflags.exe writes them
+    (`PageHeapFlags` a `REG_SZ` "0x..." unless it was a `REG_DWORD`; the DLL lists separated by spaces); the page heap
+    values the UI doesn't show (`PageHeapDllRangeStart`/`End`) are left alone. `GetImages` skips keys in braces
+    (`{ApplicationVerifierGlobalSettings}`, whose `VerifierProviders` lists the installed providers).
+  - `PageHeap.h/.cpp`: `PageHeapFlags`' bits (read off gflags.exe's `/p` code), the check box options and `Summary`.
+  - `Helpers`: error text, splitting and joining lists and words, numbers typed (`ParseNumber`), file names.
 - `GflagsX.cpp`: `_tWinMain`: settings load from `Software\ScorpioSoftware\GflagsX`, `WTLHelper::InitDarkMode` runs
   *before* any window is created, then the frame and its message loop.
 - `AppSettings.h`: WTLHelper `Settings` (`SETTING`/`DEF_SETTING`); the singleton is `AppSettings::Get()`; call `Save()`
@@ -91,7 +96,9 @@ Include paths are `..\wtlhelper\WTLHelper` and `..\wtlhelper\WTL` (WTLHelper hea
     Process Exit key when its flag is off (as the WPF version did).
   - `CImageSettingsForm`: a child dialog (`IDD_IMAGESETTINGS`); a row per `Mitigations::Fields()` entry (label and combo
     box, `IDC_FIELD_LABEL_FIRST`/`IDC_FIELD_FIRST` + index) is made in `OnInitDialog`, below the template's controls.
-- `ImageDialogs.*`: `CNewImageDlg` (a name, or Browse for an executable) and `CSilentProcessExitDlg`.
+- `ImageDialogs.*`: `CNewImageDlg` (a name, or Browse for an executable), `CSilentProcessExitDlg` (written on OK, a
+  key of its own), and `CPageHeapDlg` and `CVerifierDlg`, whose settings go to the form, written on Apply; OK checks the
+  image flag that turns them on (Enable Page Heap, Enable Application Verifier).
 - WTLHelper's window hook makes every `SendMessage` go through the kernel; lists call `SuspendHookWhilePainting`
   (`ViewBase.h`), and the file dialogs run with `SuspendResumeHook`.
 

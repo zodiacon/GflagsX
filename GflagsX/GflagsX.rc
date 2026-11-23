@@ -100,6 +100,8 @@ BEGIN
         MENUITEM "&Delete Image",               ID_IMAGE_DELETE
         MENUITEM SEPARATOR
         MENUITEM "&Silent Process Exit...",     ID_IMAGE_SILENTEXIT
+        MENUITEM "&Page Heap...",               ID_IMAGE_PAGEHEAP
+        MENUITEM "Application &Verifier...",    ID_IMAGE_VERIFIER
     END
     POPUP "&Options"
     BEGIN
@@ -128,6 +130,8 @@ BEGIN
         MENUITEM "&Copy Name\tCtrl+C",          ID_EDIT_COPY
         MENUITEM SEPARATOR
         MENUITEM "&Silent Process Exit...",     ID_IMAGE_SILENTEXIT
+        MENUITEM "&Page Heap...",               ID_IMAGE_PAGEHEAP
+        MENUITEM "Application &Verifier...",    ID_IMAGE_VERIFIER
         MENUITEM SEPARATOR
         MENUITEM "&New Image...\tCtrl+N",       ID_IMAGE_NEW
         MENUITEM "&Delete Image\tDel",          ID_IMAGE_DELETE
@@ -171,7 +175,7 @@ BEGIN
 END
 
 // a child of the Image tab; the mitigation fields' rows are added below the check boxes at run time
-IDD_IMAGESETTINGS DIALOGEX 0, 0, 250, 120
+IDD_IMAGESETTINGS DIALOGEX 0, 0, 250, 156
 STYLE DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPSIBLINGS
 FONT 9, "Segoe UI", 0, 0, 0x0
 BEGIN
@@ -181,12 +185,18 @@ BEGIN
     LTEXT           "Silent Process Exit:",IDC_STATIC,7,29,70,8
     LTEXT           "",IDC_SILENTEXIT_TEXT,80,29,90,8
     PUSHBUTTON      "&Configure...",IDC_SILENTEXIT,183,26,60,14
-    GROUPBOX        "Mitigation Options",IDC_MITIGATIONS_GROUP,7,46,236,60
-    LTEXT           "&Value (hex):",IDC_STATIC,14,61,44,8
-    EDITTEXT        IDC_MITIGATIONS,60,59,176,14,ES_UPPERCASE | ES_AUTOHSCROLL
-    CONTROL         "DEP",IDC_DEP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,78,40,10
-    CONTROL         "ATL Thunk Emulation",IDC_DEP_ATL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,58,78,90,10
-    CONTROL         "SEHOP",IDC_SEHOP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,152,78,50,10
+    LTEXT           "Page &Heap:",IDC_STATIC,7,47,75,8
+    LTEXT           "",IDC_PAGEHEAP_TEXT,84,47,96,8,SS_NOPREFIX | SS_ENDELLIPSIS
+    PUSHBUTTON      "Configure...",IDC_PAGEHEAP,183,44,60,14
+    LTEXT           "Application V&erifier:",IDC_STATIC,7,65,75,8
+    LTEXT           "",IDC_VERIFIER_TEXT,84,65,96,8,SS_NOPREFIX | SS_ENDELLIPSIS
+    PUSHBUTTON      "Configure...",IDC_VERIFIER,183,62,60,14
+    GROUPBOX        "Mitigation Options",IDC_MITIGATIONS_GROUP,7,82,236,60
+    LTEXT           "&Value (hex):",IDC_STATIC,14,97,44,8
+    EDITTEXT        IDC_MITIGATIONS,60,95,176,14,ES_UPPERCASE | ES_AUTOHSCROLL
+    CONTROL         "DEP",IDC_DEP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,114,40,10
+    CONTROL         "ATL Thunk Emulation",IDC_DEP_ATL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,58,114,90,10
+    CONTROL         "SEHOP",IDC_SEHOP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,152,114,50,10
 END
 
 IDD_SILENTEXIT DIALOGEX 0, 0, 270, 266
@@ -216,6 +226,52 @@ BEGIN
     EDITTEXT        IDC_MODULES,24,201,232,30,ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
     DEFPUSHBUTTON   "OK",IDOK,159,245,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,213,245,50,14
+END
+
+IDD_PAGEHEAP DIALOGEX 0, 0, 260, 254
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Page Heap"
+FONT 9, "Segoe UI", 0, 0, 0x0
+BEGIN
+    LTEXT           "",IDC_IMAGE,7,7,246,10
+    CONTROL         "&Full page heap (allocations on pages of their own)",IDC_PH_FULL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,22,246,10
+    CONTROL         "",IDC_PH_OPTION_FIRST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,36,246,10
+    CONTROL         "",IDC_PH_OPTION_FIRST+1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,49,246,10
+    CONTROL         "",IDC_PH_OPTION_FIRST+2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,62,246,10
+    CONTROL         "",IDC_PH_OPTION_FIRST+3,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,75,246,10
+    CONTROL         "",IDC_PH_OPTION_FIRST+4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,88,246,10
+    CONTROL         "",IDC_PH_OPTION_FIRST+5,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,101,246,10
+    CONTROL         "Only si&zes (bytes) from",IDC_PH_SIZE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,119,92,10
+    EDITTEXT        IDC_PH_SIZE_START,102,117,60,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "to",IDC_PH_SIZE_LABEL,167,119,10,8
+    EDITTEXT        IDC_PH_SIZE_END,180,117,60,14,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "&Random, percent of the allocations:",IDC_PH_RANDOM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,137,140,10
+    EDITTEXT        IDC_PH_RANDOM_VALUE,150,135,40,14,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "Only in these &DLLs:",IDC_PH_DLLS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,155,92,10
+    EDITTEXT        IDC_PH_DLLS_VALUE,102,153,151,14,ES_AUTOHSCROLL
+    CONTROL         "Fault &injection",IDC_PH_FAULTS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,173,92,10
+    LTEXT           "Probability (in 10000s):",IDC_PH_FAULT_LABEL,24,189,90,8
+    EDITTEXT        IDC_PH_FAULT_PROB,118,187,44,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Starting after (seconds):",IDC_PH_FAULT_LABEL2,24,207,90,8
+    EDITTEXT        IDC_PH_FAULT_TIMEOUT,118,205,44,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "",IDC_PH_FLAGS,7,227,140,8,SS_NOPREFIX
+    DEFPUSHBUTTON   "OK",IDOK,149,233,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,203,233,50,14
+END
+
+IDD_VERIFIER DIALOGEX 0, 0, 260, 206
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Application Verifier"
+FONT 9, "Segoe UI", 0, 0, 0x0
+BEGIN
+    LTEXT           "",IDC_IMAGE,7,7,246,10
+    LTEXT           "&Providers to load (VerifierDlls):",IDC_STATIC,7,22,246,8
+    CONTROL         "",IDC_VRF_PROVIDERS,"SysListView32",LVS_REPORT | LVS_NOCOLUMNHEADER | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,7,32,246,104
+    LTEXT           "&Flags (VerifierFlags, hex):",IDC_STATIC,7,145,96,8
+    EDITTEXT        IDC_VRF_FLAGS,106,143,60,14,ES_AUTOHSCROLL
+    LTEXT           "Application Verifier (appverif.exe) keeps its tests' settings elsewhere; these are what Windows reads to load it.",IDC_STATIC,7,163,246,18
+    DEFPUSHBUTTON   "OK",IDOK,149,185,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,203,185,50,14
 END
 
 IDD_ABOUTBOX DIALOGEX 0, 0, 213, 84
@@ -289,6 +345,8 @@ BEGIN
     ID_IMAGE_NEW            "Add an executable to set flags and options for\nNew Image"
     ID_IMAGE_DELETE         "Delete the selected executable's settings\nDelete Image"
     ID_IMAGE_SILENTEXIT     "Set what happens when the selected executable's processes exit\nSilent Process Exit"
+    ID_IMAGE_PAGEHEAP       "Set the selected executable's page heap options\nPage Heap"
+    ID_IMAGE_VERIFIER       "Set the Application Verifier providers and flags of the selected executable\nApplication Verifier"
     ID_OPTIONS_DARKMODE     "Switch between dark and light mode\nDark Mode"
     ID_VIEW_REGISTRY        "The system's flags in the registry, for the next boot\nRegistry"
     ID_VIEW_KERNEL          "The running system's flags, until the next boot\nKernel"

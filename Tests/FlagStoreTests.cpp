@@ -188,6 +188,79 @@ TEST(ImageQwordMitigationsBecomeBinaryForPolicy2) {
 	CHECK(again.has_value() && again->Mitigations == (Mitigations::Options{ 0x100, 1ull << 28 }));
 }
 
+TEST(ImagePageHeapAndVerifier) {
+	TestKeys keys;
+	CreateImage(keys.Where, L"app.exe");
+	auto image = keys.Image(L"app.exe");
+	// not shown, so never written: stays
+	DWORD start = 0x10000;
+	keys.SetValue(image, L"PageHeapDllRangeStart", REG_DWORD, &start, sizeof(start));
+
+	ImageSettings s;
+	s.PageHeap.Flags = 0x83;
+	s.PageHeap.SizeRangeStart = 16;
+	s.PageHeap.SizeRangeEnd = 4096;
+	s.PageHeap.TargetDlls = { L"a.dll", L"b.dll" };
+	s.Verifier.Dlls = { L"vfbasics.dll", L"vfcompat.dll" };
+	s.Verifier.Flags = 0x80000000;
+	CHECK_EQ(WriteImage(keys.Where, L"app.exe", s), (DWORD)ERROR_SUCCESS);
+
+	// as gflags.exe writes them: PageHeapFlags a string, the DLLs separated by spaces
+	CHECK_EQ(keys.ValueType(image, L"PageHeapFlags"), (DWORD)REG_SZ);
+	WCHAR text[64]{};
+	DWORD size = sizeof(text);
+	CHECK_EQ(::RegGetValue(HKEY_CURRENT_USER, image.c_str(), L"PageHeapFlags", RRF_RT_REG_SZ, nullptr, text, &size), (LONG)ERROR_SUCCESS);
+	CHECK_EQ(std::wstring(text), std::wstring(L"0x83"));
+	size = sizeof(text);
+	CHECK_EQ(::RegGetValue(HKEY_CURRENT_USER, image.c_str(), L"PageHeapTargetDlls", RRF_RT_REG_SZ, nullptr, text, &size), (LONG)ERROR_SUCCESS);
+	CHECK_EQ(std::wstring(text), std::wstring(L"a.dll b.dll"));
+	CHECK_EQ(keys.ValueType(image, L"PageHeapSizeRangeEnd"), (DWORD)REG_DWORD);
+	CHECK_EQ(keys.ValueType(image, L"PageHeapRandomProbability"), (DWORD)REG_NONE);	// 0
+	CHECK_EQ(keys.ValueType(image, L"VerifierFlags"), (DWORD)REG_DWORD);
+
+	auto read = ReadImage(keys.Where, L"app.exe");
+	CHECK(read.has_value());
+	if (!read)
+		return;
+	CHECK_EQ(read->PageHeap.Flags, 0x83u);
+	CHECK_EQ(read->PageHeap.FlagsType, (DWORD)REG_SZ);
+	CHECK_EQ(read->PageHeap.SizeRangeEnd, 4096u);
+	CHECK(read->PageHeap.TargetDlls == s.PageHeap.TargetDlls);
+	CHECK(read->Verifier.Dlls == s.Verifier.Dlls);
+	CHECK_EQ(read->Verifier.Flags, 0x80000000u);
+
+	// a REG_DWORD PageHeapFlags stays one; nothing set: the values go, the others stay
+	DWORD flags = 0x3;
+	keys.SetValue(image, L"PageHeapFlags", REG_DWORD, &flags, sizeof(flags));
+	read = ReadImage(keys.Where, L"app.exe");
+	CHECK(read.has_value() && read->PageHeap.Flags == 3 && read->PageHeap.FlagsType == REG_DWORD);
+	read->PageHeap.Flags = 0x13;
+	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
+	CHECK_EQ(keys.ValueType(image, L"PageHeapFlags"), (DWORD)REG_DWORD);
+
+	CHECK_EQ(WriteImage(keys.Where, L"app.exe", ImageSettings{}), (DWORD)ERROR_SUCCESS);
+	for (auto name : { L"PageHeapFlags", L"PageHeapSizeRangeStart", L"PageHeapSizeRangeEnd", L"PageHeapTargetDlls", L"VerifierDlls", L"VerifierFlags" })
+		CHECK_EQ(keys.ValueType(image, name), (DWORD)REG_NONE);
+	CHECK_EQ(keys.ValueType(image, L"PageHeapDllRangeStart"), (DWORD)REG_DWORD);
+}
+
+TEST(VerifierGlobalSettingsIsNotAnImage) {
+	TestKeys keys;
+	CreateImage(keys.Where, L"app.exe");
+	CHECK(GetVerifierProviders(keys.Where).empty());
+	// as Application Verifier has it
+	auto global = keys.Where.ImageOptions + L"\\" + VerifierGlobalSettings;
+	HKEY key;
+	CHECK_EQ(::RegCreateKeyEx(HKEY_CURRENT_USER, global.c_str(), 0, nullptr, 0, KEY_WRITE, nullptr, &key, nullptr), (LONG)ERROR_SUCCESS);
+	std::wstring providers = L"vrfcore.dll vfbasics.dll  vfcompat.dll";
+	::RegSetValueEx(key, L"VerifierProviders", 0, REG_SZ, reinterpret_cast<BYTE const*>(providers.c_str()), DWORD((providers.size() + 1) * sizeof(WCHAR)));
+	::RegCloseKey(key);
+
+	auto images = GetImages(keys.Where);
+	CHECK(images.has_value() && *images == std::vector<std::wstring>{ L"app.exe" });
+	CHECK(GetVerifierProviders(keys.Where) == (std::vector<std::wstring>{ L"vrfcore.dll", L"vfbasics.dll", L"vfcompat.dll" }));
+}
+
 TEST(SilentProcessExitRoundTrip) {
 	TestKeys keys;
 	auto none = ReadSilentProcessExit(keys.Where, L"app.exe");

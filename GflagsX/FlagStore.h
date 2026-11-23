@@ -30,6 +30,36 @@ namespace FlagStore {
 	std::expected<uint32_t, DWORD> ReadKernelFlags();
 	DWORD WriteKernelFlags(uint32_t flags);
 
+	// an image's page heap options (PageHeap.h), as gflags.exe writes them: PageHeapFlags a REG_SZ ("0x3") or a
+	// REG_DWORD, kept as it was; the DLLs a REG_SZ, separated by spaces; the rest REG_DWORDs. A 0 number (or no DLLs)
+	// removes its value. PageHeapDllRangeStart/End and others aren't read nor written: they stay.
+	struct PageHeapSettings {
+		uint32_t Flags{ 0 };
+		DWORD FlagsType{ REG_NONE };	// REG_NONE: no value (written as GFlags does, a REG_SZ)
+		DWORD SizeRangeStart{ 0 };		// bytes
+		DWORD SizeRangeEnd{ 0 };
+		DWORD RandomProbability{ 0 };	// percent of the allocations in the page heap
+		DWORD FaultProbability{ 0 };	// in 10000s
+		DWORD FaultTimeOut{ 0 };		// seconds before faults start
+		std::vector<std::wstring> TargetDlls;
+
+		bool operator==(PageHeapSettings const&) const = default;
+	};
+
+	// an image's Application Verifier settings that ntdll reads: VerifierDlls (the provider DLLs to load, a REG_SZ
+	// separated by spaces) and VerifierFlags (a REG_DWORD, or a REG_SZ number, kept as it was). Application Verifier's
+	// own per-test settings are elsewhere (appverif.exe).
+	struct VerifierSettings {
+		std::vector<std::wstring> Dlls;
+		uint32_t Flags{ 0 };
+		DWORD FlagsType{ REG_NONE };
+
+		bool operator==(VerifierSettings const&) const = default;
+	};
+
+	// the key of Application Verifier's own settings under Image File Execution Options: not an image
+	constexpr PCWSTR VerifierGlobalSettings = L"{ApplicationVerifierGlobalSettings}";
+
 	struct ImageSettings {
 		uint32_t GlobalFlag{ 0 };
 		// as stored, kept when written: REG_DWORD, or REG_SZ ("0x02000000", as GFlags writes it); REG_NONE: no value
@@ -42,11 +72,17 @@ namespace FlagStore {
 		// REG_QWORD or REG_BINARY (or REG_DWORD); REG_NONE: no value. Written as REG_BINARY when it was, or when Policy2
 		// isn't 0 (a REG_QWORD has Policy only)
 		DWORD MitigationsType{ REG_NONE };
+		PageHeapSettings PageHeap;
+		VerifierSettings Verifier;
 
 		bool operator==(ImageSettings const&) const = default;
 	};
 
-	// the images that have a key (sorted, without case)
+	// the installed Application Verifier providers (VerifierGlobalSettings' VerifierProviders: "vrfcore.dll vfbasics.dll
+	// ..."); none: empty
+	std::vector<std::wstring> GetVerifierProviders(Locations const& where);
+
+	// the images that have a key (sorted, without case; not the keys in braces, such as VerifierGlobalSettings)
 	std::expected<std::vector<std::wstring>, DWORD> GetImages(Locations const& where);
 	std::expected<ImageSettings, DWORD> ReadImage(Locations const& where, std::wstring const& image);
 	// a 0 GlobalFlag, an empty Debugger and 0 mitigations (with no more bytes set) remove their values

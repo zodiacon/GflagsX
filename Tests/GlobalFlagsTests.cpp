@@ -3,6 +3,7 @@
 #include "GlobalFlags.h"
 #include "Mitigations.h"
 #include "Helpers.h"
+#include "PageHeap.h"
 
 using namespace GFlags;
 
@@ -146,6 +147,32 @@ TEST(ParseNumber) {
 	CHECK(!ParseNumber(L"0x"));
 	CHECK(!ParseNumber(L"88h"));
 	CHECK(!ParseNumber(L"ff"));				// hex needs 0x
+}
+
+TEST(SplitAndJoinWords) {
+	using namespace Helpers;
+	CHECK(SplitWords(L" a.dll  b.dll,c.dll\r\nd.dll ") == (std::vector<std::wstring>{ L"a.dll", L"b.dll", L"c.dll", L"d.dll" }));
+	CHECK(SplitWords(L"  ").empty());
+	CHECK_EQ(JoinWords({ L"a.dll", L"", L"b.dll" }), std::wstring(L"a.dll b.dll"));
+}
+
+TEST(PageHeapSummaryAndOptions) {
+	using namespace PageHeap;
+	CHECK_EQ(Summary(0), std::wstring(L"Normal"));
+	CHECK_EQ(Summary(Defaults), std::wstring(L"Normal: stack traces"));
+	CHECK_EQ(Summary(Full | StackTraces | BackwardOverruns | SizeRange), std::wstring(L"Full: stack traces, backward overruns, size range"));
+	// as gflags.exe's /p options set them
+	CHECK_EQ(Full | BackwardOverruns, 0x11u);
+	CHECK_EQ(Full | Decommit, 0x41u);
+	CHECK_EQ(Full | Protect, 0x1001u);
+	CHECK_EQ(Full | TargetDlls, 0x401u);
+	uint32_t seen = 0;
+	for (auto& option : Options()) {
+		CHECK((option.Value & (option.Value - 1)) == 0);
+		CHECK((seen & option.Value) == 0);
+		CHECK((option.Value & (Full | SizeRange | Random | TargetDlls | Faults)) == 0);	// those have controls of their own
+		seen |= option.Value;
+	}
 }
 
 TEST(FileName) {

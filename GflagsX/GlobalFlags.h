@@ -37,6 +37,9 @@ namespace GFlags {
 
 	// Silent Process Exit (FLG_MONITOR_SILENT_PROCESS_EXIT): an image's only; its settings are in their own key
 	constexpr uint32_t MonitorSilentProcessExit = 0x200;
+	// the image flags that turn on Application Verifier and page heap (their settings are FlagStore's)
+	constexpr uint32_t EnableApplicationVerifier = 0x100;
+	constexpr uint32_t EnablePageHeap = 0x02000000;
 
 	std::span<const Flag> All();
 	// the target's flags, in the table's order

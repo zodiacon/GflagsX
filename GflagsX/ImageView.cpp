@@ -43,6 +43,14 @@ LRESULT CImageView::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 	m_Form.ShowWindow(SW_SHOWNOACTIVATE);
 	m_FormContainer.SetClient(m_Form);
 	m_Form.OnChanged = [this] { UpdateStatus(); };
+	m_Form.OnPageHeap = [this] {
+		BOOL handled;
+		OnPageHeap(0, ID_IMAGE_PAGEHEAP, nullptr, handled);
+	};
+	m_Form.OnVerifier = [this] {
+		BOOL handled;
+		OnVerifier(0, ID_IMAGE_VERIFIER, nullptr, handled);
+	};
 	m_Form.OnSilentProcessExit = [this] {
 		BOOL handled;
 		OnSilentProcessExit(0, ID_IMAGE_SILENTEXIT, nullptr, handled);
@@ -249,6 +257,8 @@ void CImageView::UpdateUI(CUpdateUIBase& ui) {
 	ui.UIEnable(ID_IMAGE_NEW, true);
 	ui.UIEnable(ID_IMAGE_DELETE, selected);
 	ui.UIEnable(ID_IMAGE_SILENTEXIT, shown);
+	ui.UIEnable(ID_IMAGE_PAGEHEAP, shown);
+	ui.UIEnable(ID_IMAGE_VERIFIER, shown);
 	auto focus = ::GetFocus();
 	ui.UIEnable(ID_EDIT_COPY, focus == m_List ? selected : m_Flags.HasFocus() ? m_Flags.HasSelection() : m_Form.IsChild(focus));
 }
@@ -432,5 +442,29 @@ LRESULT CImageView::OnSilentProcessExit(WORD /*wNotifyCode*/, WORD /*wID*/, HWND
 	m_Form.SetSilentProcessExitText(SilentProcessExitText());
 	// the settings do nothing without the flag: it's checked, for Apply
 	m_Flags.Check(GFlags::MonitorSilentProcessExit, true);
+	return 0;
+}
+
+LRESULT CImageView::OnPageHeap(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	if (m_Shown.empty())
+		return 0;
+	CPageHeapDlg dlg(m_Shown, m_Form.GetPageHeap());
+	if (dlg.DoModal(Frame()->GetHwnd()) != IDOK)
+		return 0;
+	m_Form.SetPageHeap(dlg.GetSettings());
+	m_Flags.Check(GFlags::EnablePageHeap, true);
+	UpdateStatus();
+	return 0;
+}
+
+LRESULT CImageView::OnVerifier(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	if (m_Shown.empty())
+		return 0;
+	CVerifierDlg dlg(m_Shown, m_Form.GetVerifier(), GetVerifierProviders(Where()));
+	if (dlg.DoModal(Frame()->GetHwnd()) != IDOK)
+		return 0;
+	m_Form.SetVerifier(dlg.GetSettings());
+	m_Flags.Check(GFlags::EnableApplicationVerifier, true);
+	UpdateStatus();
 	return 0;
 }

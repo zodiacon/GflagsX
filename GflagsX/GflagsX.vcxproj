@@ -133,6 +133,7 @@
     <ClCompile Include="ImageView.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="Mitigations.cpp" />
+    <ClCompile Include="PageHeap.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -151,6 +152,7 @@
     <ClInclude Include="Interfaces.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="Mitigations.h" />
+    <ClInclude Include="PageHeap.h" />
     <ClInclude Include="ViewBase.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />

@@ -63,6 +63,8 @@ public:
 		COMMAND_ID_HANDLER(ID_IMAGE_NEW, OnNewImage)
 		COMMAND_ID_HANDLER(ID_IMAGE_DELETE, OnDeleteImage)
 		COMMAND_ID_HANDLER(ID_IMAGE_SILENTEXIT, OnSilentProcessExit)
+		COMMAND_ID_HANDLER(ID_IMAGE_PAGEHEAP, OnPageHeap)
+		COMMAND_ID_HANDLER(ID_IMAGE_VERIFIER, OnVerifier)
 		CHAIN_MSG_MAP_ALT(CViewBase<CImageView>, 1)
 	END_MSG_MAP()
 
@@ -95,6 +97,9 @@ private:
 	LRESULT OnNewImage(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnDeleteImage(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnSilentProcessExit(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	// the dialogs' settings are the form's, written on Apply; OK checks the flag that turns them on
+	LRESULT OnPageHeap(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnVerifier(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 
 	// the images from the registry; the one shown (if it's still there) stays selected
 	void LoadImages();

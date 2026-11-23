@@ -5,6 +5,8 @@
 #define IDD_NEWIMAGE                    101
 #define IDD_SILENTEXIT                  102
 #define IDD_IMAGESETTINGS               103
+#define IDD_PAGEHEAP                    104
+#define IDD_VERIFIER                    105
 #define IDR_MAINFRAME                   128
 // the context menus: 0 the flags, 1 the images
 #define IDR_CONTEXT                     129
@@ -50,6 +52,28 @@
 #define IDC_MAXDUMPS_LABEL              1035
 #define IDC_MAXDUMPS                    1036
 #define IDC_MAXDUMPS_NOTE               1037
+#define IDC_PAGEHEAP_TEXT               1040
+#define IDC_PAGEHEAP                    1041
+#define IDC_VERIFIER_TEXT               1042
+#define IDC_VERIFIER                    1043
+#define IDC_PH_FULL                     1050
+#define IDC_PH_OPTION_FIRST             1051
+#define IDC_PH_SIZE                     1060
+#define IDC_PH_SIZE_START               1061
+#define IDC_PH_SIZE_END                 1062
+#define IDC_PH_RANDOM                   1063
+#define IDC_PH_RANDOM_VALUE             1064
+#define IDC_PH_DLLS                     1065
+#define IDC_PH_DLLS_VALUE               1066
+#define IDC_PH_FAULTS                   1067
+#define IDC_PH_FAULT_PROB               1068
+#define IDC_PH_FAULT_TIMEOUT            1069
+#define IDC_PH_SIZE_LABEL               1070
+#define IDC_PH_FAULT_LABEL              1071
+#define IDC_PH_FAULT_LABEL2             1072
+#define IDC_PH_FLAGS                    1073
+#define IDC_VRF_PROVIDERS               1080
+#define IDC_VRF_FLAGS                   1081
 // the image settings' mitigation fields (Mitigations::Fields order): a label and a combo box each, made at run time
 #define IDC_FIELD_LABEL_FIRST           1100
 #define IDC_FIELD_FIRST                 1150
@@ -64,6 +88,8 @@
 #define ID_VIEW_KERNEL                  32778
 #define ID_VIEW_IMAGE                   32779
 #define ID_FLAGS_TOGGLE                 32780
+#define ID_IMAGE_PAGEHEAP               32781
+#define ID_IMAGE_VERIFIER               32782
 // the status bar pane with the active view's summary
 #define ID_PANE_VIEW                    33000
 
@@ -72,7 +98,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        211
-#define _APS_NEXT_COMMAND_VALUE         32781
+#define _APS_NEXT_COMMAND_VALUE         32783
 #define _APS_NEXT_CONTROL_VALUE         1034
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

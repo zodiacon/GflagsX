@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ImageSettingsForm.h"
 #include "Mitigations.h"
+#include "PageHeap.h"
 #include "Helpers.h"
 #include <WTLHelper.h>
 
@@ -11,7 +12,7 @@ namespace {
 	const uint64_t s_BitValues[] = { 0x1, 0x2, 0x4 };
 
 	// the fields' rows, in dialog units: below the check boxes, inside the group box
-	constexpr int FirstRowY = 94, RowHeight = 17, LabelX = 14, LabelWidth = 128, ComboX = 146, ComboWidth = 90;
+	constexpr int FirstRowY = 130, RowHeight = 17, LabelX = 14, LabelWidth = 128, ComboX = 146, ComboWidth = 90;
 }
 
 LRESULT CImageSettingsForm::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/) {
@@ -64,7 +65,31 @@ void CImageSettingsForm::SetSettings(FlagStore::ImageSettings const& settings) {
 	SetDlgItemText(IDC_DEBUGGER, settings.Debugger.c_str());
 	m_Mitigations = settings.Mitigations;
 	ShowMitigations();
+	SetPageHeap(settings.PageHeap);
+	SetVerifier(settings.Verifier);
 	m_Updating = false;
+}
+
+FlagStore::PageHeapSettings const& CImageSettingsForm::GetPageHeap() const {
+	return m_PageHeap;
+}
+
+void CImageSettingsForm::SetPageHeap(FlagStore::PageHeapSettings const& settings) {
+	m_PageHeap = settings;
+	bool none = settings.Flags == 0 && settings.FlagsType == REG_NONE;
+	SetDlgItemText(IDC_PAGEHEAP_TEXT, none ? L"Not configured" : PageHeap::Summary(settings.Flags).c_str());
+}
+
+FlagStore::VerifierSettings const& CImageSettingsForm::GetVerifier() const {
+	return m_Verifier;
+}
+
+void CImageSettingsForm::SetVerifier(FlagStore::VerifierSettings const& settings) {
+	m_Verifier = settings;
+	auto text = Helpers::JoinWords(settings.Dlls);
+	if (settings.Flags)
+		text += std::format(L"{}flags 0x{:X}", text.empty() ? L"" : L"; ", settings.Flags);
+	SetDlgItemText(IDC_VERIFIER_TEXT, text.empty() ? L"Not configured" : text.c_str());
 }
 
 void CImageSettingsForm::GetSettings(FlagStore::ImageSettings& settings) const {
@@ -72,6 +97,8 @@ void CImageSettingsForm::GetSettings(FlagStore::ImageSettings& settings) const {
 	GetDlgItemText(IDC_DEBUGGER, debugger);
 	settings.Debugger = Helpers::Trim((PCWSTR)debugger);
 	settings.Mitigations = m_Mitigations;
+	settings.PageHeap = m_PageHeap;
+	settings.Verifier = m_Verifier;
 }
 
 void CImageSettingsForm::SetSilentProcessExitText(std::wstring const& text) {
@@ -81,7 +108,8 @@ void CImageSettingsForm::SetSilentProcessExitText(std::wstring const& text) {
 void CImageSettingsForm::Enable(bool enable) {
 	if (!enable) {
 		SetSettings({});
-		SetSilentProcessExitText(L"");
+		for (auto id : { IDC_SILENTEXIT_TEXT, IDC_PAGEHEAP_TEXT, IDC_VERIFIER_TEXT })
+			SetDlgItemText(id, L"");
 	}
 	for (auto child = GetWindow(GW_CHILD); child; child = child.GetWindow(GW_HWNDNEXT))
 		child.EnableWindow(enable);
@@ -199,5 +227,17 @@ LRESULT CImageSettingsForm::OnFieldChanged(WORD /*wNotifyCode*/, WORD wID, HWND 
 LRESULT CImageSettingsForm::OnSilentExit(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
 	if (OnSilentProcessExit)
 		OnSilentProcessExit();
+	return 0;
+}
+
+LRESULT CImageSettingsForm::OnPageHeapButton(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	if (OnPageHeap)
+		OnPageHeap();
+	return 0;
+}
+
+LRESULT CImageSettingsForm::OnVerifierButton(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	if (OnVerifier)
+		OnVerifier();
 	return 0;
 }

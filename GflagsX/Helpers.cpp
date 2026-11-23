@@ -77,3 +77,33 @@ std::optional<uint32_t> Helpers::ParseNumber(std::wstring_view text) {
 	}
 	return uint32_t(value);
 }
+
+std::vector<std::wstring> Helpers::SplitWords(std::wstring_view text) {
+	std::vector<std::wstring> words;
+	std::wstring word;
+	for (auto c : text) {
+		if (iswspace(c) || c == L',') {
+			if (!word.empty())
+				words.push_back(std::move(word));
+			word.clear();
+		}
+		else {
+			word += c;
+		}
+	}
+	if (!word.empty())
+		words.push_back(std::move(word));
+	return words;
+}
+
+std::wstring Helpers::JoinWords(std::vector<std::wstring> const& words) {
+	std::wstring text;
+	for (auto& word : words) {
+		if (word.empty())
+			continue;
+		if (!text.empty())
+			text += L' ';
+		text += word;
+	}
+	return text;
+}

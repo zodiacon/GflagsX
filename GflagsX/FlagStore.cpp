@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "FlagStore.h"
+#include "Helpers.h"
 
 #pragma comment(lib, "ntdll")
 
@@ -95,6 +96,26 @@ namespace {
 		return StringFrom(data);
 	}
 
+	// 0: no value; otherwise a REG_DWORD
+	DWORD WriteDword(HKEY key, PCWSTR name, DWORD value) {
+		return value ? SetDword(key, name, value) : DeleteValue(key, name);
+	}
+
+	// 0: no value; a string ("0x..." in the format given) where it was one, or where there was none and the string is
+	// the default; a REG_DWORD otherwise
+	DWORD WriteFlags(HKEY key, PCWSTR name, uint32_t value, DWORD type, bool stringByDefault, std::wstring const& text) {
+		if (value == 0)
+			return DeleteValue(key, name);
+		bool string = type == REG_SZ || type == REG_EXPAND_SZ || (type == REG_NONE && stringByDefault);
+		return string ? SetString(key, name, text) : SetDword(key, name, value);
+	}
+
+	// separated by spaces; none: no value
+	DWORD WriteWords(HKEY key, PCWSTR name, std::vector<std::wstring> const& words) {
+		auto text = Helpers::JoinWords(words);
+		return text.empty() ? DeleteValue(key, name) : SetString(key, name, text);
+	}
+
 	DWORD ReadDword(HKEY key, PCWSTR name, DWORD defaultValue) {
 		uint32_t value;
 		DWORD type;
@@ -168,6 +189,13 @@ DWORD FlagStore::WriteKernelFlags(uint32_t flags) {
 	return status < 0 ? RtlNtStatusToDosError(status) : ERROR_SUCCESS;
 }
 
+std::vector<std::wstring> FlagStore::GetVerifierProviders(Locations const& where) {
+	wil::unique_hkey key;
+	if (OpenKey(where.Root, SubKey(where.ImageOptions, VerifierGlobalSettings), KEY_READ, key) != ERROR_SUCCESS)
+		return {};
+	return Helpers::SplitWords(ReadString(key.get(), L"VerifierProviders"));
+}
+
 std::expected<std::vector<std::wstring>, DWORD> FlagStore::GetImages(Locations const& where) {
 	wil::unique_hkey key;
 	auto error = OpenKey(where.Root, where.ImageOptions, KEY_READ, key);
@@ -184,6 +212,9 @@ std::expected<std::vector<std::wstring>, DWORD> FlagStore::GetImages(Locations c
 			break;
 		if (error != ERROR_SUCCESS)
 			return std::unexpected(error);
+		// Application Verifier's settings ({ApplicationVerifierGlobalSettings}) and the like: not images
+		if (len > 0 && name[0] == L'{')
+			continue;
 		images.emplace_back(name, len);
 	}
 	std::ranges::sort(images, [](auto& a, auto& b) { return _wcsicmp(a.c_str(), b.c_str()) < 0; });
@@ -219,6 +250,23 @@ std::expected<ImageSettings, DWORD> FlagStore::ReadImage(Locations const& where,
 		memcpy(&settings.Mitigations.Policy, data.data(), sizeof(uint64_t));
 		memcpy(&settings.Mitigations.Policy2, data.data() + sizeof(uint64_t), sizeof(uint64_t));
 	}
+
+	auto& heap = settings.PageHeap;
+	error = ReadFlagsValue(key.get(), L"PageHeapFlags", heap.Flags, heap.FlagsType);
+	if (error != ERROR_SUCCESS)
+		return std::unexpected(error);
+	heap.SizeRangeStart = ReadDword(key.get(), L"PageHeapSizeRangeStart", 0);
+	heap.SizeRangeEnd = ReadDword(key.get(), L"PageHeapSizeRangeEnd", 0);
+	heap.RandomProbability = ReadDword(key.get(), L"PageHeapRandomProbability", 0);
+	heap.FaultProbability = ReadDword(key.get(), L"PageHeapFaultProbability", 0);
+	heap.FaultTimeOut = ReadDword(key.get(), L"PageHeapFaultTimeOut", 0);
+	heap.TargetDlls = Helpers::SplitWords(ReadString(key.get(), L"PageHeapTargetDlls"));
+
+	auto& verifier = settings.Verifier;
+	verifier.Dlls = Helpers::SplitWords(ReadString(key.get(), L"VerifierDlls"));
+	error = ReadFlagsValue(key.get(), L"VerifierFlags", verifier.Flags, verifier.FlagsType);
+	if (error != ERROR_SUCCESS)
+		return std::unexpected(error);
 	return settings;
 }
 
@@ -240,6 +288,22 @@ DWORD FlagStore::WriteImage(Locations const& where, std::wstring const& image, I
 	error = settings.Debugger.empty() ? DeleteValue(key.get(), L"Debugger") : SetString(key.get(), L"Debugger", settings.Debugger);
 	if (error != ERROR_SUCCESS)
 		return error;
+
+	auto& heap = settings.PageHeap;
+	auto& verifier = settings.Verifier;
+	for (auto e : {
+		// GFlags writes PageHeapFlags as a string
+		WriteFlags(key.get(), L"PageHeapFlags", heap.Flags, heap.FlagsType, true, std::format(L"0x{:x}", heap.Flags)),
+		WriteDword(key.get(), L"PageHeapSizeRangeStart", heap.SizeRangeStart),
+		WriteDword(key.get(), L"PageHeapSizeRangeEnd", heap.SizeRangeEnd),
+		WriteDword(key.get(), L"PageHeapRandomProbability", heap.RandomProbability),
+		WriteDword(key.get(), L"PageHeapFaultProbability", heap.FaultProbability),
+		WriteDword(key.get(), L"PageHeapFaultTimeOut", heap.FaultTimeOut),
+		WriteWords(key.get(), L"PageHeapTargetDlls", heap.TargetDlls),
+		WriteFlags(key.get(), L"VerifierFlags", verifier.Flags, verifier.FlagsType, false, std::format(L"0x{:x}", verifier.Flags)),
+		WriteWords(key.get(), L"VerifierDlls", verifier.Dlls) })
+		if (e != ERROR_SUCCESS)
+			return e;
 
 	bool more = std::ranges::any_of(settings.MitigationsMore, [](auto b) { return b != 0; });
 	auto& options = settings.Mitigations;
