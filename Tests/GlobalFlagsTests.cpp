@@ -27,6 +27,17 @@ TEST(FlagsForTarget) {
 	CHECK(std::ranges::none_of(image, [](auto f) { return f->Value == 0x8; }));
 }
 
+TEST(EveryBitIsAFlag) {
+	// GFlags' table has all 32
+	uint32_t all = 0;
+	for (auto& flag : All())
+		all |= flag.Value;
+	CHECK_EQ(all, 0xffffffffu);
+	CHECK(std::ranges::any_of(ForTarget(Target::Image), [](auto f) { return f->Value == 0x10000; }));	// Disable Stack Extension
+	CHECK((TargetMask(Target::Kernel) & 0xc00000) == 0xc00000);	// close exception, exception logging
+	CHECK((TargetMask(Target::Image) & 0xc00000) == 0);
+}
+
 TEST(TargetMaskCoversTheTargetsFlags) {
 	auto mask = TargetMask(Target::Registry);
 	for (auto flag : ForTarget(Target::Registry))
@@ -45,27 +56,49 @@ TEST(MitigationFieldStates) {
 	auto fields = Fields();
 	auto& aslr = fields[0];
 	CHECK_EQ(aslr.Shift, 8);
-	uint64_t options = 0x101;	// DEP, Force ASLR always on
+	Options options{ 0x101 };	// DEP, Force ASLR always on
 	CHECK(GetState(options, aslr) == State::AlwaysOn);
 	options = SetState(options, aslr, State::AlwaysOff);
-	CHECK_EQ(options, 0x201ull);
+	CHECK_EQ(options.Policy, 0x201ull);
 	// the other bits stay
-	options = SetState(options | (1ull << 63), fields[2], State::AlwaysOn);
-	CHECK_EQ(options, 0x8000000000010201ull);
+	options.Policy |= 1ull << 63;
+	options = SetState(options, fields[2], State::AlwaysOn);
+	CHECK_EQ(options.Policy, 0x8000000000010201ull);
 	CHECK(GetState(options, aslr) == State::AlwaysOff);
 	options = SetState(options, aslr, State::Default);
-	CHECK_EQ(options, 0x8000000000010001ull);
+	CHECK_EQ(options.Policy, 0x8000000000010001ull);
+	CHECK_EQ(options.Policy2, 0ull);
+}
+
+TEST(MitigationPolicy2Fields) {
+	using namespace Mitigations;
+	auto fields = Fields();
+	auto shadow = std::ranges::find_if(fields, [](auto& f) { return std::wstring_view(f.Name) == L"CET Shadow Stacks"; });
+	CHECK(shadow != fields.end());
+	if (shadow == fields.end())
+		return;
+	CHECK_EQ(shadow->Shift, 64 + 28);	// PROCESS_CREATION_MITIGATION_POLICY2_CET_USER_SHADOW_STACKS_MASK
+	Options options{ 0x101, 1ull << 63 };
+	options = SetState(options, *shadow, State::Other);
+	CHECK_EQ(options.Policy2, (1ull << 63) | (3ull << 28));
+	CHECK_EQ(options.Policy, 0x101ull);		// Policy's bits stay
+	CHECK(GetState(options, *shadow) == State::Other);
+	CHECK_EQ(StateName(*shadow, State::Other), std::wstring(L"Strict Mode"));
+	// a Policy field doesn't read Policy2's bits at the same shift
+	CHECK(GetState(Options{ 0, 1ull << 28 }, fields[5]) == State::Default);	// Disable Win32k System Calls: 28
 }
 
 TEST(MitigationFieldsDontOverlap) {
-	uint64_t seen = 0;
+	uint64_t seen[2]{};
 	for (auto& field : Mitigations::Fields()) {
-		auto mask = 3ull << field.Shift;
-		CHECK((seen & mask) == 0);
-		seen |= mask;
+		CHECK(field.Shift >= 0 && field.Shift < 128 && field.Shift % 4 == 0);
+		auto mask = 3ull << (field.Shift % 64);
+		auto& word = seen[field.Shift / 64];
+		CHECK((word & mask) == 0);
+		word |= mask;
 	}
 	for (auto& bit : Mitigations::Bits())
-		CHECK((seen & bit.Value) == 0);
+		CHECK((seen[0] & bit.Value) == 0);
 }
 
 TEST(MitigationStateNames) {
@@ -78,13 +111,20 @@ TEST(MitigationStateNames) {
 
 TEST(MitigationsParseAndFormat) {
 	using namespace Mitigations;
-	CHECK_EQ(Format(0x100), std::wstring(L"0000000000000100"));
-	CHECK(Parse(L"100") == 0x100ull);
-	CHECK(Parse(L" 0x1000000000000100 ") == 0x1000000000000100ull);
-	CHECK(Parse(L"ffffffffffffffff") == ~0ull);
+	CHECK_EQ(Format({ 0x100 }), std::wstring(L"0000000000000100"));
+	CHECK_EQ(Format({ 0x100, 0x10000000 }), std::wstring(L"00000000100000000000000000000100"));
+	CHECK(Parse(L"100") == Options{ 0x100 });
+	CHECK(Parse(L" 0x1000000000000100 ") == Options{ 0x1000000000000100 });
+	CHECK(Parse(L"ffffffffffffffff") == Options{ ~0ull });
+	// past 16 digits: the high ones are Policy2's
+	CHECK(Parse(L"11112222333344445") == (Options{ 0x1112222333344445, 0x1 }));
+	CHECK(Parse(L"00000000100000000000000000000100") == (Options{ 0x100, 0x10000000 }));
+	CHECK(Parse(Format({ 0xabc, 0xdef })) == (Options{ 0xabc, 0xdef }));
 	CHECK(!Parse(L""));
 	CHECK(!Parse(L"12G"));
-	CHECK(!Parse(L"11112222333344445"));	// 17 digits
+	CHECK(!Parse(L"111122223333444455556666777788889"));	// 33 digits
+	// ordered as one 128-bit number
+	CHECK((Options{ ~0ull, 0 } < Options{ 0, 1 }));
 }
 
 TEST(SplitList) {

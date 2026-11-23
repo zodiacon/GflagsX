@@ -51,17 +51,22 @@ Include paths are `..\wtlhelper\WTLHelper` and `..\wtlhelper\WTL` (WTLHelper hea
 - **Non-UI core** (tested):
   - `GlobalFlags.h/.cpp` (namespace `GFlags`: `GlobalFlags` is a Win32 function): the flag table (`All()`), each flag's
     value, `Target`s (Registry, Kernel, Image) and `Category`; `ForTarget`, `TargetMask` (Apply writes the bits no
-    check box of the target shows as they were read). A flag is added or retargeted here only.
-  - `Mitigations.h/.cpp`: MitigationOptions' first 64 bits: DEP, ATL thunk emulation and SEHOP as bits (`Bits()`),
-    every other mitigation a 2-bit field at a multiple of 4 (`Fields()`: 0 default, 1 always on, 2 always off, 3 the
-    field's `OtherName` or reserved); `GetState`/`SetState` keep the other bits; hex `Format`/`Parse`.
+    check box of the target shows as they were read; the views' status names the set ones). The table is GFlags' (all
+    32 bits). A flag is added or retargeted here only.
+  - `Mitigations.h/.cpp`: MitigationOptions' first 128 bits as `Options` (`Policy`: winbase.h's
+    `PROCESS_CREATION_MITIGATION_POLICY_*`, `Policy2`: `..._POLICY2_*`): DEP, ATL thunk emulation and SEHOP as
+    `Policy` bits (`Bits()`), every other mitigation a 2-bit field at a multiple of 4 (`Fields()`, `Shift` 64 and up
+    for `Policy2`'s: 0 default, 1 always on, 2 always off, 3 the field's `OtherName` or reserved); `GetState`/`SetState`
+    keep the other bits; hex `Format`/`Parse` as one 128-bit number (16 digits while `Policy2` is 0).
   - `FlagStore.h/.cpp`: reading and writing, with Win32 errors (`std::expected<T, DWORD>` or `DWORD`). The registry
     functions take `Locations` (`System()`: HKLM; `Under()`: the tests'), and open keys with `KEY_WOW64_64KEY`.
     The kernel's flags are `NtQuerySystemInformation`/`NtSetSystemInformation(SystemFlagsInformation)` (not
     `RtlGetNtGlobalFlags`, which is the process's own). An image's `GlobalFlag` may be a `REG_SZ` ("0x02000000", as
-    GFlags writes it) and is written back with its type; `MitigationOptions` may be `REG_BINARY` of 16 or more bytes
-    (Set-ProcessMitigation), whose bytes past the first 8 are kept (`MitigationsMore`). Zero or empty values are
-    removed rather than written. Silent Process Exit: `ReportingMode` bits, `DumpType` as the documented number.
+    GFlags writes it) and is written back with its type; `MitigationOptions` may be a `REG_QWORD` (`Policy` only) or a
+    `REG_BINARY` of 16 or more bytes (Set-ProcessMitigation), whose bytes past the first 16 are kept
+    (`MitigationsMore`); a non-zero `Policy2` makes it `REG_BINARY`. Zero or empty values are removed rather than
+    written. Silent Process Exit: `ReportingMode` bits; `DumpType` is a `MINIDUMP_TYPE` bitmask per Microsoft's docs (a
+    Micro dump is 0x88), but the app still writes 0-3 for Micro/Mini/Heap/Custom: a known bug.
   - `Helpers`: error text, splitting and joining lists, file names.
 - `GflagsX.cpp`: `_tWinMain`: settings load from `Software\ScorpioSoftware\GflagsX`, `WTLHelper::InitDarkMode` runs
   *before* any window is created, then the frame and its message loop.

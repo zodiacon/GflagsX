@@ -9,7 +9,7 @@ namespace {
 	constexpr auto Img = Target::Image;
 	constexpr auto All_ = Target::All;
 
-	// as the WPF version had them, which follows GFlags: where each flag can be set, and what it affects
+	// GFlags' flag table (learn.microsoft.com, "GFlags Flag Table"): where each flag can be set, and what it affects
 	const Flag s_Flags[] = {
 		{ L"Stop on Exception", 0x1, All_, Category::UserMode },
 		{ L"Show Loader Snaps", 0x2, All_, Category::UserMode },
@@ -27,11 +27,14 @@ namespace {
 		{ L"Create Kernel Mode Stack Trace Database", 0x2000, Reg, Category::KernelMode },
 		{ L"Maintain a List of Objects for Each Type", 0x4000, Reg, Category::Both },
 		{ L"Enable Heap Tagging by DLL", 0x8000, All_, Category::UserMode },
+		{ L"Disable Stack Extension", 0x10000, Img, Category::UserMode },
 		{ L"Enable Debugging of the Windows Subsystem", 0x20000, Reg, Category::UserMode },
 		{ L"Enable Loading of Kernel Debugging Symbols", 0x40000, Reg | Ker, Category::KernelMode },
 		{ L"Disable Paging of Kernel Stacks", 0x80000, Reg, Category::KernelMode },
 		{ L"Enable System Critical Breaks", 0x100000, All_, Category::Both },
 		{ L"Disable Heap Coalesce on Free", 0x200000, All_, Category::UserMode },
+		{ L"Enable Close Exception", 0x400000, Reg | Ker, Category::UserMode },
+		{ L"Enable Exception Logging", 0x800000, Reg | Ker, Category::KernelMode },
 		{ L"Enable Object Handle Type Tagging", 0x01000000, Reg | Ker, Category::Both },
 		{ L"Enable Page Heap", 0x02000000, All_, Category::UserMode },
 		{ L"Debug WinLogon", 0x04000000, Reg, Category::Both },

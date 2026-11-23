@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Mitigations.h"
+
 //
 // Where the flags live, read and written: the system's flags in the registry (read at boot), the running kernel's
 // (ntdll), and the images' (Image File Execution Options: GlobalFlag, Debugger, MitigationOptions) with their Silent
@@ -33,10 +35,13 @@ namespace FlagStore {
 		// as stored, kept when written: REG_DWORD, or REG_SZ ("0x02000000", as GFlags writes it); REG_NONE: no value
 		DWORD GlobalFlagType{ REG_NONE };
 		std::wstring Debugger;
-		uint64_t Mitigations{ 0 };
-		// a REG_BINARY MitigationOptions' bytes past the first 8 (newer mitigations, which aren't shown), kept
+		Mitigations::Options Mitigations;
+		// a REG_BINARY MitigationOptions' bytes past the first 16 (mitigations newer than Policy2, which aren't shown),
+		// kept
 		std::vector<BYTE> MitigationsMore;
-		DWORD MitigationsType{ REG_NONE };	// REG_QWORD or REG_BINARY (or REG_DWORD); REG_NONE: no value
+		// REG_QWORD or REG_BINARY (or REG_DWORD); REG_NONE: no value. Written as REG_BINARY when it was, or when Policy2
+		// isn't 0 (a REG_QWORD has Policy only)
+		DWORD MitigationsType{ REG_NONE };
 
 		bool operator==(ImageSettings const&) const = default;
 	};

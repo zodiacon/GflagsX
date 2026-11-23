@@ -93,6 +93,9 @@ std::wstring CFlagsView::GetStatusText() const {
 	auto text = std::format(L"{}: {}", m_Type == ViewType::Kernel ? L"Running system's flags" : L"Flags for the next boot", FormatValue(m_Value));
 	if (IsModified())
 		text += std::format(L" (changed to {}: not applied)", FormatValue(NewValue()));
+	// bits of flags that aren't this target's (kept on Apply): seen nowhere else
+	if (auto other = m_Value & ~m_Mask)
+		text += std::format(L"; set with no check box here: {}", FormatValue(other));
 	return text;
 }
 

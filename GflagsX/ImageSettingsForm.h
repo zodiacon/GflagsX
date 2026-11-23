@@ -2,6 +2,7 @@
 
 #include "resource.h"
 #include "FlagStore.h"
+#include "Mitigations.h"
 
 //
 // The Image tab's settings of the selected image besides its flags: the debugger, the Silent Process Exit summary with
@@ -61,7 +62,7 @@ private:
 	void TakeValueText();
 	void Changed();
 
-	uint64_t m_Mitigations{ 0 };
+	Mitigations::Options m_Mitigations;
 	CSize m_IdealSize;
 	bool m_Updating{ false };	// setting the controls: no changes to tell
 };

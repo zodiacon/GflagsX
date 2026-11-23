@@ -206,13 +206,18 @@ std::expected<ImageSettings, DWORD> FlagStore::ReadImage(Locations const& where,
 	std::vector<BYTE> data;
 	if (QueryValue(key.get(), L"MitigationOptions", type, data) == ERROR_SUCCESS) {
 		settings.MitigationsType = type;
-		// a REG_BINARY of 8 bytes or more (as Set-ProcessMitigation writes it), a REG_QWORD, a REG_DWORD
-		data.resize(std::max(data.size(), sizeof(uint64_t)));
-		settings.Mitigations = *reinterpret_cast<uint64_t const*>(data.data());
+		// a REG_BINARY (16 bytes or more, as Set-ProcessMitigation writes it: Policy, Policy2 and maybe more), a
+		// REG_QWORD (Policy), a REG_DWORD (Policy's low half)
 		if (type == REG_DWORD)
-			settings.Mitigations &= 0xffffffff;
-		if (type == REG_BINARY)
-			settings.MitigationsMore.assign(data.begin() + sizeof(uint64_t), data.end());
+			data.resize(std::min(data.size(), sizeof(DWORD)));
+		else if (type != REG_BINARY)
+			data.resize(std::min(data.size(), sizeof(uint64_t)));
+		constexpr size_t Size = 2 * sizeof(uint64_t);
+		if (data.size() > Size)
+			settings.MitigationsMore.assign(data.begin() + Size, data.end());
+		data.resize(Size);
+		memcpy(&settings.Mitigations.Policy, data.data(), sizeof(uint64_t));
+		memcpy(&settings.Mitigations.Policy2, data.data() + sizeof(uint64_t), sizeof(uint64_t));
 	}
 	return settings;
 }
@@ -237,15 +242,17 @@ DWORD FlagStore::WriteImage(Locations const& where, std::wstring const& image, I
 		return error;
 
 	bool more = std::ranges::any_of(settings.MitigationsMore, [](auto b) { return b != 0; });
-	if (settings.Mitigations == 0 && !more)
+	auto& options = settings.Mitigations;
+	if (options.IsZero() && !more)
 		return DeleteValue(key.get(), L"MitigationOptions");
-	if (settings.MitigationsType == REG_BINARY) {
-		std::vector<BYTE> data(sizeof(uint64_t));
-		memcpy(data.data(), &settings.Mitigations, sizeof(uint64_t));
+	if (settings.MitigationsType == REG_BINARY || options.Policy2 != 0 || more) {
+		std::vector<BYTE> data(2 * sizeof(uint64_t));
+		memcpy(data.data(), &options.Policy, sizeof(uint64_t));
+		memcpy(data.data() + sizeof(uint64_t), &options.Policy2, sizeof(uint64_t));
 		data.insert(data.end(), settings.MitigationsMore.begin(), settings.MitigationsMore.end());
 		return ::RegSetValueEx(key.get(), L"MitigationOptions", 0, REG_BINARY, data.data(), (DWORD)data.size());
 	}
-	return ::RegSetValueEx(key.get(), L"MitigationOptions", 0, REG_QWORD, reinterpret_cast<BYTE const*>(&settings.Mitigations), sizeof(uint64_t));
+	return ::RegSetValueEx(key.get(), L"MitigationOptions", 0, REG_QWORD, reinterpret_cast<BYTE const*>(&options.Policy), sizeof(uint64_t));
 }
 
 DWORD FlagStore::CreateImage(Locations const& where, std::wstring const& image) {

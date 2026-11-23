@@ -182,8 +182,8 @@ BEGIN
     LTEXT           "",IDC_SILENTEXIT_TEXT,80,29,90,8
     PUSHBUTTON      "&Configure...",IDC_SILENTEXIT,183,26,60,14
     GROUPBOX        "Mitigation Options",IDC_MITIGATIONS_GROUP,7,46,236,60
-    LTEXT           "&Value (hex):",IDC_STATIC,14,61,70,8
-    EDITTEXT        IDC_MITIGATIONS,146,59,90,14,ES_UPPERCASE | ES_AUTOHSCROLL
+    LTEXT           "&Value (hex):",IDC_STATIC,14,61,44,8
+    EDITTEXT        IDC_MITIGATIONS,60,59,176,14,ES_UPPERCASE | ES_AUTOHSCROLL
     CONTROL         "DEP",IDC_DEP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,78,40,10
     CONTROL         "ATL Thunk Emulation",IDC_DEP_ATL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,58,78,90,10
     CONTROL         "SEHOP",IDC_SEHOP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,152,78,50,10
@@ -254,7 +254,7 @@ BEGIN
             VALUE "FileDescription", "GFlagsX"
             VALUE "FileVersion", "1.0.0.0"
             VALUE "InternalName", "GflagsX"
-            VALUE "LegalCopyright", "Copyright (C) 2017-2026 Pavel Yosifovich"
+            VALUE "LegalCopyright", "(C) 2017-2026 Pavel Yosifovich"
             VALUE "OriginalFilename", "GflagsX.exe"
             VALUE "ProductName", "GFlagsX"
             VALUE "ProductVersion", "1.0.0.0"

@@ -80,14 +80,14 @@ TEST(ImageSettingsRoundTrip) {
 	ImageSettings s;
 	s.GlobalFlag = 0x2000000;
 	s.Debugger = L"\"C:\\Debuggers\\windbg.exe\" -g";
-	s.Mitigations = 0x100000101;
+	s.Mitigations.Policy = 0x100000101;
 	CHECK_EQ(WriteImage(keys.Where, L"app.exe", s), (DWORD)ERROR_SUCCESS);
 	auto read = ReadImage(keys.Where, L"app.exe");
 	CHECK(read.has_value());
 	CHECK_EQ(read->GlobalFlag, 0x2000000u);
 	CHECK_EQ(read->GlobalFlagType, (DWORD)REG_DWORD);
 	CHECK_EQ(read->Debugger, s.Debugger);
-	CHECK_EQ(read->Mitigations, 0x100000101ull);
+	CHECK(read->Mitigations == Mitigations::Options{ 0x100000101 });
 	CHECK_EQ(read->MitigationsType, (DWORD)REG_QWORD);
 
 	// nothing set: the values go
@@ -123,11 +123,12 @@ TEST(ImageBinaryMitigationsKeepTheirMoreBytes) {
 	keys.SetValue(keys.Image(L"app.exe"), L"MitigationOptions", REG_BINARY, data, sizeof(data));
 	auto read = ReadImage(keys.Where, L"app.exe");
 	CHECK(read.has_value());
-	CHECK_EQ(read->Mitigations, 0x100ull);
+	CHECK_EQ(read->Mitigations.Policy, 0x100ull);
+	CHECK_EQ(read->Mitigations.Policy2, 0x2000000000000010ull);
 	CHECK_EQ(read->MitigationsType, (DWORD)REG_BINARY);
-	CHECK_EQ(read->MitigationsMore.size(), (size_t)8);
+	CHECK(read->MitigationsMore.empty());
 
-	read->Mitigations = 0x200;
+	read->Mitigations.Policy = 0x200;
 	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
 	BYTE written[32]{};
 	DWORD size = sizeof(written), type = 0;
@@ -136,10 +137,53 @@ TEST(ImageBinaryMitigationsKeepTheirMoreBytes) {
 	CHECK_EQ(size, (DWORD)16);
 	CHECK(written[1] == 0x02 && written[8] == 0x10 && written[15] == 0x20);
 
-	// the first 8 bytes all 0, the others not: the value stays
-	read->Mitigations = 0;
+	// Policy all 0, Policy2 not: the value stays
+	read->Mitigations.Policy = 0;
 	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
 	CHECK_EQ(keys.ValueType(keys.Image(L"app.exe"), L"MitigationOptions"), (DWORD)REG_BINARY);
+}
+
+TEST(ImageMitigationsBeyondPolicy2AreKept) {
+	TestKeys keys;
+	CreateImage(keys.Where, L"app.exe");
+	// 24 bytes: Policy, Policy2 and 8 bytes of mitigations newer than this
+	BYTE data[24]{ 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10, 0, 0, 0, 0, 0x55, 0, 0, 0, 0, 0, 0, 0x66 };
+	keys.SetValue(keys.Image(L"app.exe"), L"MitigationOptions", REG_BINARY, data, sizeof(data));
+	auto read = ReadImage(keys.Where, L"app.exe");
+	CHECK(read.has_value());
+	if (!read)
+		return;
+	CHECK(read->Mitigations == (Mitigations::Options{ 0x1, 0x10000000 }));
+	CHECK_EQ(read->MitigationsMore.size(), (size_t)8);
+
+	read->Mitigations = {};
+	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
+	BYTE written[32]{};
+	DWORD size = sizeof(written), type = 0;
+	CHECK_EQ(::RegGetValue(HKEY_CURRENT_USER, keys.Image(L"app.exe").c_str(), L"MitigationOptions", RRF_RT_ANY, &type, written, &size), (LONG)ERROR_SUCCESS);
+	CHECK_EQ(size, (DWORD)24);
+	CHECK(written[0] == 0 && written[11] == 0 && written[16] == 0x55 && written[23] == 0x66);
+}
+
+TEST(ImageQwordMitigationsBecomeBinaryForPolicy2) {
+	TestKeys keys;
+	CreateImage(keys.Where, L"app.exe");
+	ImageSettings s;
+	s.Mitigations.Policy = 0x100;
+	CHECK_EQ(WriteImage(keys.Where, L"app.exe", s), (DWORD)ERROR_SUCCESS);
+	CHECK_EQ(keys.ValueType(keys.Image(L"app.exe"), L"MitigationOptions"), (DWORD)REG_QWORD);
+
+	// a REG_QWORD has no room for Policy2
+	auto read = ReadImage(keys.Where, L"app.exe");
+	CHECK(read.has_value());
+	if (!read)
+		return;
+	CHECK(read->Mitigations == Mitigations::Options{ 0x100 });
+	read->Mitigations.Policy2 = 1ull << 28;	// CET shadow stacks: always on
+	CHECK_EQ(WriteImage(keys.Where, L"app.exe", *read), (DWORD)ERROR_SUCCESS);
+	CHECK_EQ(keys.ValueType(keys.Image(L"app.exe"), L"MitigationOptions"), (DWORD)REG_BINARY);
+	auto again = ReadImage(keys.Where, L"app.exe");
+	CHECK(again.has_value() && again->Mitigations == (Mitigations::Options{ 0x100, 1ull << 28 }));
 }
 
 TEST(SilentProcessExitRoundTrip) {

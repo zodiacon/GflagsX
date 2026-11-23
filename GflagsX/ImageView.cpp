@@ -219,6 +219,9 @@ std::wstring CImageView::GetStatusText() const {
 		text += std::format(L" | {}: flags {}", m_Shown, GFlags::FormatValue(m_ShownSettings.GlobalFlag));
 		if (IsModified())
 			text += L" (changed: not applied)";
+		// bits of flags that aren't an image's (kept on Apply): seen nowhere else
+		if (auto other = m_ShownSettings.GlobalFlag & ~GFlags::TargetMask(GFlags::Target::Image))
+			text += std::format(L"; set with no check box here: {}", GFlags::FormatValue(other));
 	}
 	return text;
 }

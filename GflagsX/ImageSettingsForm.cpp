@@ -49,7 +49,7 @@ LRESULT CImageSettingsForm::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_IdealSize = CSize(rc.Width(), toPixels(0, bottom + 7, 0, 0).top);
 	SetWindowPos(nullptr, 0, 0, m_IdealSize.cx, m_IdealSize.cy, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 
-	CEdit(GetDlgItem(IDC_MITIGATIONS)).SetLimitText(18);
+	CEdit(GetDlgItem(IDC_MITIGATIONS)).SetLimitText(34);	// 0x and 32 digits
 	CEdit(GetDlgItem(IDC_DEBUGGER)).SetLimitText(MAX_PATH * 2);
 	Enable(false);
 	return TRUE;
@@ -92,7 +92,7 @@ void CImageSettingsForm::ShowMitigations() {
 	m_Updating = true;
 	SetDlgItemText(IDC_MITIGATIONS, Format(m_Mitigations).c_str());
 	for (int i = 0; i < _countof(s_BitValues); i++)
-		CheckDlgButton(IDC_DEP + i, (m_Mitigations & s_BitValues[i]) ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(IDC_DEP + i, (m_Mitigations.Policy & s_BitValues[i]) ? BST_CHECKED : BST_UNCHECKED);
 
 	auto fields = Fields();
 	for (int i = 0; i < (int)fields.size(); i++) {
@@ -174,9 +174,9 @@ LRESULT CImageSettingsForm::OnEscape(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 LRESULT CImageSettingsForm::OnBitClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
 	auto bit = s_BitValues[wID - IDC_DEP];
 	if (IsDlgButtonChecked(wID))
-		m_Mitigations |= bit;
+		m_Mitigations.Policy |= bit;
 	else
-		m_Mitigations &= ~bit;
+		m_Mitigations.Policy &= ~bit;
 	ShowMitigations();
 	Changed();
 	return 0;
