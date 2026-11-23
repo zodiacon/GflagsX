@@ -56,6 +56,7 @@ public:
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_ID_HANDLER(IDC_LAUNCHMONITOR, OnCheckChanged)
 		COMMAND_ID_HANDLER(IDC_DUMP, OnCheckChanged)
+		COMMAND_HANDLER(IDC_DUMPTYPE, CBN_SELCHANGE, OnDumpTypeChanged)
 		COMMAND_ID_HANDLER(IDC_DUMPFOLDER_BROWSE, OnBrowseFolder)
 		COMMAND_ID_HANDLER(IDOK, OnOK)
 		COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
@@ -69,12 +70,15 @@ public:
 private:
 	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnCheckChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnDumpTypeChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnBrowseFolder(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnOK(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnCancel(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 
-	// the monitor's and the dumps' controls follow their check boxes
+	// the monitor's and the dumps' controls follow their check boxes; the dump type's value is typed for Custom only
 	void UpdateEnabled();
+	// the DumpType value of a preset in its box (Custom: the last value typed or read stays)
+	void ShowDumpType();
 	std::wstring GetText(int id) const;
 
 	std::wstring m_Image;

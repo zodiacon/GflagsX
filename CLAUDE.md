@@ -65,8 +65,9 @@ Include paths are `..\wtlhelper\WTLHelper` and `..\wtlhelper\WTL` (WTLHelper hea
     GFlags writes it) and is written back with its type; `MitigationOptions` may be a `REG_QWORD` (`Policy` only) or a
     `REG_BINARY` of 16 or more bytes (Set-ProcessMitigation), whose bytes past the first 16 are kept
     (`MitigationsMore`); a non-zero `Policy2` makes it `REG_BINARY`. Zero or empty values are removed rather than
-    written. Silent Process Exit: `ReportingMode` bits; `DumpType` is a `MINIDUMP_TYPE` bitmask per Microsoft's docs (a
-    Micro dump is 0x88), but the app still writes 0-3 for Micro/Mini/Heap/Custom: a known bug.
+    written. Silent Process Exit: `ReportingMode` bits; `DumpType` is `MINIDUMP_TYPE` flags, with GFlags' presets
+    (`MicroDump` 0x88 as documented; `MiniDump` 0x121 and `HeapDump` 0x10B25 are gflagsui.dll's constants) and any
+    other value its Custom; `MaxNumberOfDumpFiles` (0: no value).
   - `Helpers`: error text, splitting and joining lists, file names.
 - `GflagsX.cpp`: `_tWinMain`: settings load from `Software\ScorpioSoftware\GflagsX`, `WTLHelper::InitDarkMode` runs
   *before* any window is created, then the frame and its message loop.

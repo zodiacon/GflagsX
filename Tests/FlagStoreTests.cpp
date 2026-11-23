@@ -2,6 +2,8 @@
 #include "TestFramework.h"
 #include "FlagStore.h"
 
+#include <DbgHelp.h>	// MINIDUMP_TYPE
+
 using namespace FlagStore;
 
 //
@@ -189,14 +191,15 @@ TEST(ImageQwordMitigationsBecomeBinaryForPolicy2) {
 TEST(SilentProcessExitRoundTrip) {
 	TestKeys keys;
 	auto none = ReadSilentProcessExit(keys.Where, L"app.exe");
-	CHECK(none.has_value() && !none->Exists && none->DumpType == DumpType::Mini);
+	CHECK(none.has_value() && !none->Exists && none->DumpType == MiniDump && none->MaxNumberOfDumpFiles == 0);
 
 	SilentProcessExitSettings s;
 	s.IgnoreSelfExits = true;
 	s.ReportingMode = LaunchMonitorProcess | LocalDump;
 	s.MonitorProcess = L"monitor.exe -p";
 	s.LocalDumpFolder = L"C:\\Dumps";
-	s.DumpType = DumpType::Heap;
+	s.DumpType = HeapDump;
+	s.MaxNumberOfDumpFiles = 5;
 	s.ModuleIgnoreList = { L"a.dll", L"b.dll" };
 	CHECK_EQ(WriteSilentProcessExit(keys.Where, L"app.exe", s), (DWORD)ERROR_SUCCESS);
 
@@ -207,7 +210,8 @@ TEST(SilentProcessExitRoundTrip) {
 	CHECK_EQ(read->ReportingMode, LaunchMonitorProcess | LocalDump);
 	CHECK_EQ(read->MonitorProcess, s.MonitorProcess);
 	CHECK_EQ(read->LocalDumpFolder, s.LocalDumpFolder);
-	CHECK(read->DumpType == DumpType::Heap);
+	CHECK_EQ(read->DumpType, HeapDump);
+	CHECK_EQ(read->MaxNumberOfDumpFiles, 5u);
 	CHECK(read->ModuleIgnoreList == s.ModuleIgnoreList);
 	auto exitKey = keys.Where.SilentProcessExit + L"\\app.exe";
 	CHECK_EQ(keys.ValueType(exitKey, L"DumpType"), (DWORD)REG_DWORD);
@@ -225,6 +229,36 @@ TEST(SilentProcessExitRoundTrip) {
 	CHECK_EQ(DeleteSilentProcessExit(keys.Where, L"app.exe"), (DWORD)ERROR_SUCCESS);	// none: fine
 	read = ReadSilentProcessExit(keys.Where, L"app.exe");
 	CHECK(read.has_value() && !read->Exists);
+}
+
+TEST(SilentProcessExitDumpTypes) {
+	// DumpType is MINIDUMP_TYPE flags, as GFlags writes them (Micro is the docs' example)
+	CHECK_EQ(MicroDump, DWORD(MiniDumpFilterMemory | MiniDumpFilterModulePaths));
+	CHECK(PresetOf(0x88) == DumpPreset::Micro);
+	CHECK(PresetOf(0x121) == DumpPreset::Mini);
+	CHECK(PresetOf(0x10B25) == DumpPreset::Heap);
+	CHECK(PresetOf(2) == DumpPreset::Custom);		// MiniDumpWithFullMemory
+	CHECK(PresetOf(0) == DumpPreset::Custom);
+	for (auto preset : { DumpPreset::Micro, DumpPreset::Mini, DumpPreset::Heap })
+		CHECK(PresetValue(preset) && PresetOf(*PresetValue(preset)) == preset);
+	CHECK(!PresetValue(DumpPreset::Custom));
+
+	// a custom value is written as it is, and no limit removes MaxNumberOfDumpFiles
+	TestKeys keys;
+	SilentProcessExitSettings s;
+	s.DumpType = MiniDumpWithFullMemory;
+	s.MaxNumberOfDumpFiles = 3;
+	CHECK_EQ(WriteSilentProcessExit(keys.Where, L"app.exe", s), (DWORD)ERROR_SUCCESS);
+	s.MaxNumberOfDumpFiles = 0;
+	CHECK_EQ(WriteSilentProcessExit(keys.Where, L"app.exe", s), (DWORD)ERROR_SUCCESS);
+	auto read = ReadSilentProcessExit(keys.Where, L"app.exe");
+	CHECK(read.has_value());
+	if (!read)
+		return;
+	CHECK_EQ(read->DumpType, DWORD(MiniDumpWithFullMemory));
+	CHECK(PresetOf(read->DumpType) == DumpPreset::Custom);
+	auto exitKey = keys.Where.SilentProcessExit + L"\\app.exe";
+	CHECK_EQ(keys.ValueType(exitKey, L"MaxNumberOfDumpFiles"), (DWORD)REG_NONE);
 }
 
 TEST(KernelFlagsRead) {

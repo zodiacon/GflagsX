@@ -134,6 +134,20 @@ TEST(SplitList) {
 	CHECK_EQ(Helpers::JoinLines({ L"a", L"b" }), std::wstring(L"a\r\nb"));
 }
 
+TEST(ParseNumber) {
+	using Helpers::ParseNumber;
+	CHECK(ParseNumber(L"136") == 136u);
+	CHECK(ParseNumber(L" 0x88 ") == 0x88u);
+	CHECK(ParseNumber(L"0XfFfFfFfF") == 0xffffffffu);
+	CHECK(ParseNumber(L"4294967295") == 0xffffffffu);
+	CHECK(!ParseNumber(L"4294967296"));		// past 32 bits
+	CHECK(!ParseNumber(L"0x100000000"));
+	CHECK(!ParseNumber(L""));
+	CHECK(!ParseNumber(L"0x"));
+	CHECK(!ParseNumber(L"88h"));
+	CHECK(!ParseNumber(L"ff"));				// hex needs 0x
+}
+
 TEST(FileName) {
 	CHECK_EQ(Helpers::FileName(L"C:\\Windows\\notepad.exe"), std::wstring(L"notepad.exe"));
 	CHECK_EQ(Helpers::FileName(L"notepad.exe"), std::wstring(L"notepad.exe"));

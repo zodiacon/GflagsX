@@ -46,6 +46,10 @@
 #define IDC_DUMPFOLDER_LABEL            1031
 #define IDC_DUMPTYPE_LABEL              1032
 #define IDC_MODULES_LABEL               1033
+#define IDC_DUMPTYPE_VALUE              1034
+#define IDC_MAXDUMPS_LABEL              1035
+#define IDC_MAXDUMPS                    1036
+#define IDC_MAXDUMPS_NOTE               1037
 // the image settings' mitigation fields (Mitigations::Fields order): a label and a combo box each, made at run time
 #define IDC_FIELD_LABEL_FIRST           1100
 #define IDC_FIELD_FIRST                 1150

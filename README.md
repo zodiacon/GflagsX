@@ -14,7 +14,7 @@ A native Windows app (C++, WTL), with dark mode and per-monitor DPI support. It 
   - its global flags (Page Heap, Application Verifier, Show Loader Snaps...),
   - its debugger,
   - its mitigation options (DEP, ASLR, CFG, dynamic code, image loads, CET shadow stacks, XFG...), as the hex value and a choice per mitigation,
-  - Silent Process Exit: a monitor process, a notification, dumps (folder, type, modules to ignore).
+  - Silent Process Exit: a monitor process, a notification, dumps (folder, type as GFlags' presets or custom MINIDUMP_TYPE flags, how many, modules to ignore).
 
   New Image adds an executable (typed, or picked with Browse), Delete Image removes its key.
 - Flags are check boxes, sortable by name, value and what they affect. Apply writes them, Reload reads them again;

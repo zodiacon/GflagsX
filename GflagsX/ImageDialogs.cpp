@@ -70,10 +70,13 @@ LRESULT CSilentProcessExitDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LP
 	SetDlgItemText(IDC_MODULES, Helpers::JoinLines(s.ModuleIgnoreList).c_str());
 
 	CComboBox types(GetDlgItem(IDC_DUMPTYPE));
-	// in DumpType order
+	// in DumpPreset order
 	for (auto name : { L"Micro", L"Mini", L"Heap", L"Custom" })
 		types.AddString(name);
-	types.SetCurSel((int)s.DumpType);
+	types.SetCurSel((int)PresetOf(s.DumpType));
+	SetDlgItemText(IDC_DUMPTYPE_VALUE, std::format(L"0x{:X}", s.DumpType).c_str());
+	if (s.MaxNumberOfDumpFiles)
+		SetDlgItemInt(IDC_MAXDUMPS, s.MaxNumberOfDumpFiles, FALSE);
 
 	UpdateEnabled();
 	return TRUE;
@@ -84,8 +87,24 @@ void CSilentProcessExitDlg::UpdateEnabled() {
 	for (auto id : { IDC_MONITOR_LABEL, IDC_MONITOR })
 		GetDlgItem(id).EnableWindow(monitor);
 	bool dump = IsDlgButtonChecked(IDC_DUMP);
-	for (auto id : { IDC_DUMPFOLDER_LABEL, IDC_DUMPFOLDER, IDC_DUMPFOLDER_BROWSE, IDC_DUMPTYPE_LABEL, IDC_DUMPTYPE, IDC_MODULES_LABEL, IDC_MODULES })
+	for (auto id : { IDC_DUMPFOLDER_LABEL, IDC_DUMPFOLDER, IDC_DUMPFOLDER_BROWSE, IDC_DUMPTYPE_LABEL, IDC_DUMPTYPE,
+		IDC_MAXDUMPS_LABEL, IDC_MAXDUMPS, IDC_MAXDUMPS_NOTE, IDC_MODULES_LABEL, IDC_MODULES })
 		GetDlgItem(id).EnableWindow(dump);
+	bool custom = CComboBox(GetDlgItem(IDC_DUMPTYPE)).GetCurSel() == (int)DumpPreset::Custom;
+	GetDlgItem(IDC_DUMPTYPE_VALUE).EnableWindow(dump);
+	CEdit(GetDlgItem(IDC_DUMPTYPE_VALUE)).SetReadOnly(!custom);
+}
+
+void CSilentProcessExitDlg::ShowDumpType() {
+	auto preset = DumpPreset(std::max(0, CComboBox(GetDlgItem(IDC_DUMPTYPE)).GetCurSel()));
+	if (auto value = PresetValue(preset))
+		SetDlgItemText(IDC_DUMPTYPE_VALUE, std::format(L"0x{:X}", *value).c_str());
+}
+
+LRESULT CSilentProcessExitDlg::OnDumpTypeChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/) {
+	ShowDumpType();
+	UpdateEnabled();
+	return 0;
 }
 
 std::wstring CSilentProcessExitDlg::GetText(int id) const {
@@ -122,7 +141,6 @@ LRESULT CSilentProcessExitDlg::OnOK(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndC
 		s.ReportingMode |= Notification;
 	s.MonitorProcess = GetText(IDC_MONITOR);
 	s.LocalDumpFolder = GetText(IDC_DUMPFOLDER);
-	s.DumpType = DumpType(std::max(0, CComboBox(GetDlgItem(IDC_DUMPTYPE)).GetCurSel()));
 	s.ModuleIgnoreList = Helpers::SplitList(GetText(IDC_MODULES));
 
 	auto refuse = [this](PCWSTR text, int id) {
@@ -137,6 +155,23 @@ LRESULT CSilentProcessExitDlg::OnOK(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndC
 		refuse(L"Type the folder for the dumps.", IDC_DUMPFOLDER);
 		return 0;
 	}
+	// a preset's value, or Custom's as typed (MINIDUMP_TYPE flags)
+	auto preset = DumpPreset(std::max(0, CComboBox(GetDlgItem(IDC_DUMPTYPE)).GetCurSel()));
+	auto dumpType = PresetValue(preset);
+	if (!dumpType)
+		dumpType = Helpers::ParseNumber(GetText(IDC_DUMPTYPE_VALUE));
+	if (!dumpType) {
+		refuse(L"Type the custom dump type: MINIDUMP_TYPE flags, in decimal or in hex with 0x.", IDC_DUMPTYPE_VALUE);
+		return 0;
+	}
+	s.DumpType = *dumpType;
+	auto maxDumps = GetText(IDC_MAXDUMPS);
+	auto max = maxDumps.empty() ? std::optional<uint32_t>(0) : Helpers::ParseNumber(maxDumps);
+	if (!max) {
+		refuse(L"Type the maximum number of dumps, or leave it empty for Windows' default.", IDC_MAXDUMPS);
+		return 0;
+	}
+	s.MaxNumberOfDumpFiles = *max;
 	m_Settings = std::move(s);
 	EndDialog(wID);
 	return 0;

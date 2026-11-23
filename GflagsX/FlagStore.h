@@ -63,10 +63,18 @@ namespace FlagStore {
 	constexpr DWORD LocalDump = 2;
 	constexpr DWORD Notification = 4;
 
-	// the documented DumpType values
-	enum class DumpType : DWORD {
+	// DumpType is MINIDUMP_TYPE flags (dbghelp.h). GFlags' dump types are these, any other value is its Custom: Micro is
+	// documented (MiniDumpFilterMemory | MiniDumpFilterModulePaths), Mini and Heap are gflagsui.dll's constants.
+	enum class DumpPreset {
 		Micro, Mini, Heap, Custom,
 	};
+	constexpr DWORD MicroDump = 0x88;
+	constexpr DWORD MiniDump = 0x121;		// data segments, unloaded modules, process and thread data
+	constexpr DWORD HeapDump = 0x10B25;		// Mini's, handle data, private read/write memory, memory info, tokens
+	// the preset a DumpType is (Custom: none of them)
+	DumpPreset PresetOf(DWORD dumpType);
+	// a preset's DumpType (Custom: nullopt, the value is the user's)
+	std::optional<DWORD> PresetValue(DumpPreset preset);
 
 	struct SilentProcessExitSettings {
 		bool Exists{ false };	// read: the image has a key
@@ -74,7 +82,8 @@ namespace FlagStore {
 		DWORD ReportingMode{ 0 };
 		std::wstring MonitorProcess;
 		std::wstring LocalDumpFolder;
-		DumpType DumpType{ DumpType::Mini };
+		DWORD DumpType{ MiniDump };			// MINIDUMP_TYPE flags
+		DWORD MaxNumberOfDumpFiles{ 0 };	// 0: no value (Windows' limit, 10 per the docs)
 		std::vector<std::wstring> ModuleIgnoreList;
 	};
 

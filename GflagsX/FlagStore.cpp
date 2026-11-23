@@ -288,6 +288,24 @@ bool FlagStore::IsValidImageName(std::wstring const& name) {
 	return !name.empty() && name.find(L'\\') == std::wstring::npos && name.size() < 256;
 }
 
+FlagStore::DumpPreset FlagStore::PresetOf(DWORD dumpType) {
+	switch (dumpType) {
+		case MicroDump: return DumpPreset::Micro;
+		case MiniDump: return DumpPreset::Mini;
+		case HeapDump: return DumpPreset::Heap;
+	}
+	return DumpPreset::Custom;
+}
+
+std::optional<DWORD> FlagStore::PresetValue(DumpPreset preset) {
+	switch (preset) {
+		case DumpPreset::Micro: return MicroDump;
+		case DumpPreset::Mini: return MiniDump;
+		case DumpPreset::Heap: return HeapDump;
+	}
+	return std::nullopt;
+}
+
 std::expected<SilentProcessExitSettings, DWORD> FlagStore::ReadSilentProcessExit(Locations const& where, std::wstring const& image) {
 	SilentProcessExitSettings settings;
 	wil::unique_hkey key;
@@ -302,7 +320,8 @@ std::expected<SilentProcessExitSettings, DWORD> FlagStore::ReadSilentProcessExit
 	settings.ReportingMode = ReadDword(key.get(), L"ReportingMode", 0);
 	settings.MonitorProcess = ReadString(key.get(), L"MonitorProcess");
 	settings.LocalDumpFolder = ReadString(key.get(), L"LocalDumpFolder");
-	settings.DumpType = DumpType(std::min<DWORD>(ReadDword(key.get(), L"DumpType", DWORD(DumpType::Mini)), DWORD(DumpType::Custom)));
+	settings.DumpType = ReadDword(key.get(), L"DumpType", MiniDump);
+	settings.MaxNumberOfDumpFiles = ReadDword(key.get(), L"MaxNumberOfDumpFiles", 0);
 
 	DWORD type;
 	std::vector<BYTE> data;
@@ -334,7 +353,8 @@ DWORD FlagStore::WriteSilentProcessExit(Locations const& where, std::wstring con
 		settings.ReportingMode ? SetDword(key.get(), L"ReportingMode", settings.ReportingMode) : DeleteValue(key.get(), L"ReportingMode"),
 		string(L"MonitorProcess", settings.MonitorProcess),
 		string(L"LocalDumpFolder", settings.LocalDumpFolder),
-		SetDword(key.get(), L"DumpType", DWORD(settings.DumpType)) })
+		SetDword(key.get(), L"DumpType", settings.DumpType),
+		settings.MaxNumberOfDumpFiles ? SetDword(key.get(), L"MaxNumberOfDumpFiles", settings.MaxNumberOfDumpFiles) : DeleteValue(key.get(), L"MaxNumberOfDumpFiles") })
 		if (e != ERROR_SUCCESS)
 			return e;
 

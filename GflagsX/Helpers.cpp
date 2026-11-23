@@ -49,3 +49,31 @@ std::wstring Helpers::FileName(std::wstring const& path) {
 	auto slash = path.find_last_of(L"\\/");
 	return slash == std::wstring::npos ? path : path.substr(slash + 1);
 }
+
+std::optional<uint32_t> Helpers::ParseNumber(std::wstring_view text) {
+	auto trimmed = Trim(text);
+	std::wstring_view digits = trimmed;
+	int base = 10;
+	if (digits.size() > 2 && digits[0] == L'0' && (digits[1] == L'x' || digits[1] == L'X')) {
+		digits.remove_prefix(2);
+		base = 16;
+	}
+	if (digits.empty())
+		return std::nullopt;
+	uint64_t value = 0;
+	for (auto c : digits) {
+		int digit;
+		if (c >= L'0' && c <= L'9')
+			digit = c - L'0';
+		else if (base == 16 && c >= L'a' && c <= L'f')
+			digit = c - L'a' + 10;
+		else if (base == 16 && c >= L'A' && c <= L'F')
+			digit = c - L'A' + 10;
+		else
+			return std::nullopt;
+		value = value * base + digit;
+		if (value > 0xffffffff)
+			return std::nullopt;
+	}
+	return uint32_t(value);
+}
