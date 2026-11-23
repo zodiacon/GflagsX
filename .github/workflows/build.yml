@@ -1,0 +1,78 @@
+# Builds the solution (Debug and Release x64) and runs the tests (Tests\Tests.vcxproj).
+# The image has Visual Studio 2026, whose only C++ toolset is v145, the projects'.
+# ReleaseSigned isn't built: it signs with a certificate the runner doesn't have.
+name: Build and test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2025-vs2026
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [ Debug, Release ]
+
+    steps:
+      - name: Check out (with the WTLHelper submodule)
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      # vcpkg's binary cache (the built packages, which actions/cache keeps between runs), keyed by the image's vcpkg
+      # commit (it decides the ports' versions, so the packages' hashes)
+      - name: Find the vcpkg version
+        id: vcpkg
+        shell: pwsh
+        run: |
+          $cache = Join-Path $env:RUNNER_TEMP 'vcpkg-binary-cache'
+          New-Item -ItemType Directory -Force $cache | Out-Null
+          "VCPKG_DEFAULT_BINARY_CACHE=$cache" >> $env:GITHUB_ENV
+          "commit=$(git -C $env:VCPKG_INSTALLATION_ROOT rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
+
+      - name: Restore the vcpkg packages
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg-${{ steps.vcpkg.outputs.commit }}-wil-detours-wtl
+          restore-keys: vcpkg-
+
+      # vcpkg with user-wide integration, as the projects expect: WIL, Detours (WTLHelper's dark mode) and WTL, in the
+      # static triplet (every project sets VcpkgUseStatic) and the default one
+      - name: Install the vcpkg packages (WIL, Detours, WTL)
+        shell: pwsh
+        run: |
+          $vcpkg = Join-Path $env:VCPKG_INSTALLATION_ROOT 'vcpkg.exe'
+          $packages = 'wil', 'detours', 'wtl'
+          & $vcpkg install ($packages | ForEach-Object { "${_}:x64-windows"; "${_}:x64-windows-static" })
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          & $vcpkg integrate install
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v3
+
+      - name: Build
+        shell: pwsh
+        run: msbuild GflagsX.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=x64 /m /v:m /nologo
+
+      # the registry tests work under HKCU\Software\GflagsXTests (removed after), and read the kernel's flags
+      - name: Tests
+        shell: pwsh
+        run: |
+          & ".\x64\${{ matrix.configuration }}\Tests.exe"
+          exit $LASTEXITCODE
+
+      - name: Upload the build
+        if: matrix.configuration == 'Release'
+        uses: actions/upload-artifact@v7
+        with:
+          name: GflagsX-x64-Release
+          path: |
+            x64/Release/GflagsX.exe
+          if-no-files-found: warn
