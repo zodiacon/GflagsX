@@ -1,0 +1,326 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "atlres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE
+BEGIN
+    "#include ""atlres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\flag.ico"
+IDI_APPLY               ICON                    "res\\apply.ico"
+IDI_REFRESH             ICON                    "res\\refresh.ico"
+IDI_REGISTRY            ICON                    "res\\registry.ico"
+IDI_KERNEL              ICON                    "res\\cpu.ico"
+IDI_IMAGE               ICON                    "res\\image.ico"
+IDI_NEWIMAGE            ICON                    "res\\newimage.ico"
+IDI_DELETE              ICON                    "res\\delete.ico"
+IDI_CONFIGURE           ICON                    "res\\configure.ico"
+IDI_COPY                ICON                    "res\\copy.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "E&xit",                       ID_APP_EXIT
+    END
+    POPUP "&Edit"
+    BEGIN
+        MENUITEM "&Copy\tCtrl+C",               ID_EDIT_COPY
+    END
+    POPUP "&View"
+    BEGIN
+        MENUITEM "&Registry\tCtrl+1",           ID_VIEW_REGISTRY
+        MENUITEM "&Kernel\tCtrl+2",             ID_VIEW_KERNEL
+        MENUITEM "&Image\tCtrl+3",              ID_VIEW_IMAGE
+        MENUITEM SEPARATOR
+        MENUITEM "Re&load\tF5",                 ID_VIEW_REFRESH
+        MENUITEM SEPARATOR
+        MENUITEM "&Toolbar",                    ID_VIEW_TOOLBAR
+        MENUITEM "&Status Bar",                 ID_VIEW_STATUS_BAR
+    END
+    POPUP "F&lags"
+    BEGIN
+        MENUITEM "&Apply\tCtrl+S",              ID_FLAGS_APPLY
+        MENUITEM "&Clear All",                  ID_FLAGS_CLEARALL
+    END
+    POPUP "&Image"
+    BEGIN
+        MENUITEM "&New Image...\tCtrl+N",       ID_IMAGE_NEW
+        MENUITEM "&Delete Image",               ID_IMAGE_DELETE
+        MENUITEM SEPARATOR
+        MENUITEM "&Silent Process Exit...",     ID_IMAGE_SILENTEXIT
+    END
+    POPUP "&Options"
+    BEGIN
+        MENUITEM "&Dark Mode",                  ID_OPTIONS_DARKMODE
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "&About GFlagsX...",           ID_APP_ABOUT
+    END
+END
+
+IDR_CONTEXT MENU
+BEGIN
+    POPUP "Flags"
+    BEGIN
+        MENUITEM "&Check / Uncheck\tSpace",     ID_FLAGS_TOGGLE
+        MENUITEM "&Copy\tCtrl+C",               ID_EDIT_COPY
+        MENUITEM SEPARATOR
+        MENUITEM "Clear &All",                  ID_FLAGS_CLEARALL
+        MENUITEM SEPARATOR
+        MENUITEM "&Apply\tCtrl+S",              ID_FLAGS_APPLY
+        MENUITEM "Re&load\tF5",                 ID_VIEW_REFRESH
+    END
+    POPUP "Image"
+    BEGIN
+        MENUITEM "&Copy Name\tCtrl+C",          ID_EDIT_COPY
+        MENUITEM SEPARATOR
+        MENUITEM "&Silent Process Exit...",     ID_IMAGE_SILENTEXIT
+        MENUITEM SEPARATOR
+        MENUITEM "&New Image...\tCtrl+N",       ID_IMAGE_NEW
+        MENUITEM "&Delete Image\tDel",          ID_IMAGE_DELETE
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS
+BEGIN
+    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL, NOINVERT
+    "S",            ID_FLAGS_APPLY,         VIRTKEY, CONTROL, NOINVERT
+    "N",            ID_IMAGE_NEW,           VIRTKEY, CONTROL, NOINVERT
+    "1",            ID_VIEW_REGISTRY,       VIRTKEY, CONTROL, NOINVERT
+    "2",            ID_VIEW_KERNEL,         VIRTKEY, CONTROL, NOINVERT
+    "3",            ID_VIEW_IMAGE,          VIRTKEY, CONTROL, NOINVERT
+    VK_F5,          ID_VIEW_REFRESH,        VIRTKEY, NOINVERT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_NEWIMAGE DIALOGEX 0, 0, 260, 84
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "New Image"
+FONT 9, "Segoe UI", 0, 0, 0x0
+BEGIN
+    LTEXT           "The executable's file name (such as notepad.exe):",IDC_STATIC,7,7,246,10
+    EDITTEXT        IDC_NAME,7,19,196,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "&Browse...",IDC_BROWSE,207,19,46,14
+    LTEXT           "",IDC_NAME_ERROR,7,38,246,10
+    DEFPUSHBUTTON   "OK",IDOK,149,63,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,203,63,50,14
+END
+
+// a child of the Image tab; the mitigation fields' rows are added below the check boxes at run time
+IDD_IMAGESETTINGS DIALOGEX 0, 0, 250, 120
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPSIBLINGS
+FONT 9, "Segoe UI", 0, 0, 0x0
+BEGIN
+    LTEXT           "&Debugger:",IDC_STATIC,7,9,50,8
+    EDITTEXT        IDC_DEBUGGER,60,7,162,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_DEBUGGER_BROWSE,225,7,18,14
+    LTEXT           "Silent Process Exit:",IDC_STATIC,7,29,70,8
+    LTEXT           "",IDC_SILENTEXIT_TEXT,80,29,90,8
+    PUSHBUTTON      "&Configure...",IDC_SILENTEXIT,183,26,60,14
+    GROUPBOX        "Mitigation Options",IDC_MITIGATIONS_GROUP,7,46,236,60
+    LTEXT           "&Value (hex):",IDC_STATIC,14,61,70,8
+    EDITTEXT        IDC_MITIGATIONS,146,59,90,14,ES_UPPERCASE | ES_AUTOHSCROLL
+    CONTROL         "DEP",IDC_DEP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,78,40,10
+    CONTROL         "ATL Thunk Emulation",IDC_DEP_ATL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,58,78,90,10
+    CONTROL         "SEHOP",IDC_SEHOP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,152,78,50,10
+END
+
+IDD_SILENTEXIT DIALOGEX 0, 0, 270, 248
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Silent Process Exit"
+FONT 9, "Segoe UI", 0, 0, 0x0
+BEGIN
+    LTEXT           "",IDC_IMAGE,7,7,256,10
+    GROUPBOX        "General",IDC_STATIC,7,22,256,80
+    CONTROL         "&Ignore self exits (the process ending itself)",IDC_IGNORESELF,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,35,240,10
+    CONTROL         "&Launch a monitor process",IDC_LAUNCHMONITOR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,49,240,10
+    LTEXT           "&Monitor process:",IDC_MONITOR_LABEL,24,65,62,8
+    EDITTEXT        IDC_MONITOR,88,63,168,14,ES_AUTOHSCROLL
+    CONTROL         "Show a &notification",IDC_NOTIFICATION,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,84,240,10
+    GROUPBOX        "Dump Collection",IDC_STATIC,7,108,256,112
+    CONTROL         "&Enable",IDC_DUMP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,121,240,10
+    LTEXT           "Dump &folder:",IDC_DUMPFOLDER_LABEL,24,137,62,8
+    EDITTEXT        IDC_DUMPFOLDER,88,135,148,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_DUMPFOLDER_BROWSE,238,135,18,14
+    LTEXT           "Dump &type:",IDC_DUMPTYPE_LABEL,24,155,62,8
+    COMBOBOX        IDC_DUMPTYPE,88,153,80,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Modules to i&gnore (one per line):",IDC_MODULES_LABEL,24,173,230,8
+    EDITTEXT        IDC_MODULES,24,183,232,30,ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN | WS_VSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,159,227,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,213,227,50,14
+END
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 213, 84
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About GFlagsX"
+FONT 9, "Segoe UI", 0, 0, 0x0
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,81,63,50,14
+    ICON            IDR_MAINFRAME,IDC_STATIC,7,7,20,20
+    LTEXT           "Static",IDC_VERSION,53,10,153,8
+    LTEXT           "Static",IDC_COPYRIGHT,53,23,153,8
+    CONTROL         "<a>https://github.com/zodiacon/GflagsX</a>",IDC_LINK,
+                    "SysLink",WS_TABSTOP,49,40,157,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Scorpio Software"
+            VALUE "FileDescription", "GFlagsX"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "GflagsX"
+            VALUE "LegalCopyright", "Copyright (C) 2017-2026 Pavel Yosifovich"
+            VALUE "OriginalFilename", "GflagsX.exe"
+            VALUE "ProductName", "GFlagsX"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDR_MAINFRAME           "GFlagsX"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FLAGS_APPLY          "Write the checked flags (and the image's settings)\nApply"
+    ID_FLAGS_CLEARALL       "Uncheck all the flags\nClear All"
+    ID_FLAGS_TOGGLE         "Check or uncheck the selected flags\nCheck / Uncheck"
+    ID_IMAGE_NEW            "Add an executable to set flags and options for\nNew Image"
+    ID_IMAGE_DELETE         "Delete the selected executable's settings\nDelete Image"
+    ID_IMAGE_SILENTEXIT     "Set what happens when the selected executable's processes exit\nSilent Process Exit"
+    ID_OPTIONS_DARKMODE     "Switch between dark and light mode\nDark Mode"
+    ID_VIEW_REGISTRY        "The system's flags in the registry, for the next boot\nRegistry"
+    ID_VIEW_KERNEL          "The running system's flags, until the next boot\nKernel"
+    ID_VIEW_IMAGE           "The executables' flags and options\nImage"
+    ID_VIEW_REFRESH         "Read the flags again, discarding changes\nReload"
+    ID_EDIT_COPY            "Copy the selection\nCopy"
+END
+
+STRINGTABLE
+BEGIN
+    ID_APP_ABOUT            "Display program information, version number and copyright\nAbout"
+    ID_APP_EXIT             "Quit the application\nExit"
+END
+
+STRINGTABLE
+BEGIN
+    ATL_IDS_IDLEMESSAGE     "Ready"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_TOOLBAR         "Show or hide the toolbar\nToggle ToolBar"
+    ID_VIEW_STATUS_BAR      "Show or hide the status bar\nToggle StatusBar"
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
